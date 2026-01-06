@@ -1,5 +1,10 @@
 /**
- * Homebridge Node - Improved Version
+ * Homebridge Node - Improved Version (REFERENCE IMPLEMENTATION)
+ *
+ * NOTE: This file is in the reference/ directory and is NOT compiled or used.
+ * It serves as a reference implementation showing how to use GenericFunctions,
+ * types, and constants for future development.
+ *
  * Complete integration with Homebridge API following n8n best practices
  * Optimized for MCP (Model Context Protocol)
  */

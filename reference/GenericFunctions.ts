@@ -19,6 +19,9 @@ import {
 	IHomebridgeCredentials,
 } from './types';
 
+// NOTE: This file is in the reference/ directory and is NOT compiled.
+// It serves as a reference implementation for future development.
+
 // =============================================================================
 // CONSTANTS
 // =============================================================================
