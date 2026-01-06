@@ -27,4 +27,8 @@
 		"nodes/**/*.json",
 		"package.json",
 	],
+	"exclude": [
+		"nodes/**/*.improved.ts",
+		"node_modules"
+	]
 }
