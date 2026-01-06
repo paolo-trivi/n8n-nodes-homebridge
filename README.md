@@ -6,11 +6,11 @@
 
 An n8n community node that provides **complete integration** with Homebridge API, allowing you to control your HomeKit accessories and manage your Homebridge server through n8n workflows.
 
-**✨ Optimized for MCP (Model Context Protocol)** - Perfect for AI agents and automation!
+**Optimized for MCP (Model Context Protocol)** - Perfect for AI agents and automation!
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/reference/license/) workflow automation platform.
 
-## 📑 Table of Contents
+## Table of Contents
 
 - [Features](#features)
 - [Installation](#installation)
@@ -26,7 +26,7 @@ An n8n community node that provides **complete integration** with Homebridge API
 
 ---
 
-## ✨ Features
+## Features
 
 ### Comprehensive API Coverage
 - **79 API endpoints** - Complete Homebridge API implementation
@@ -54,7 +54,7 @@ An n8n community node that provides **complete integration** with Homebridge API
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Option 1: Via n8n UI (Recommended)
 
@@ -84,16 +84,16 @@ After installation, restart n8n to see the node in your palette.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Configure Credentials
 
 1. In n8n, create new credentials for **Homebridge API**
 2. Enter your Homebridge server details:
-   - **Server URL**: `http://your-homebridge-server:8581`
-   - **Username**: Your Homebridge username
-   - **Password**: Your Homebridge password
-   - **Two-Factor Code** (optional): If 2FA is enabled
+** - **Server URL**: `http://your-homebridge-server:8581`
+** - **Username**: Your Homebridge username
+** - **Password**: Your Homebridge password
+** - **Two-Factor Code** (optional): If 2FA is enabled
 
 ### 2. Create Your First Workflow
 
@@ -112,28 +112,28 @@ After installation, restart n8n to see the node in your palette.
 **Control a Light:**
 
 ```
-1. Add "Homebridge" node → Login
-2. Add "Homebridge" node → Resource: Accessories, Operation: List
-3. Add "Homebridge" node → Resource: Accessories, Operation: Set Characteristic
-   - Unique ID: <your-light-id>
-   - Characteristic Type: On
-   - Value: true
+1. Add "Homebridge" node**-> Login
+2. Add "Homebridge" node**-> Resource: Accessories, Operation: List
+3. Add "Homebridge" node**-> Resource: Accessories, Operation: Set Characteristic
+** - Unique ID: <your-light-id>
+** - Characteristic Type: On
+** - Value: true
 4. Connect and execute
 ```
 
 ---
 
-## 🎯 Operations
+## Operations
 
 ### Complete Feature List (79 Operations)
 
-#### 🔐 Authentication (4 operations)
+#### Authentication (4 operations)
 - **Login** - Exchange username/password for access token
 - **Get Settings** - Get authentication settings
 - **No Auth Token** - Get token when auth is disabled
 - **Check Auth** - Verify token validity
 
-#### 🖥️ Server Management (16 operations)
+#### Server Management (16 operations)
 - **Restart Server** - Restart main Homebridge instance
 - **Start/Stop/Restart Child Bridge** - Manage child bridges
 - **Get Pairing Info** - HomeKit pairing information
@@ -143,13 +143,13 @@ After installation, restart n8n to see the node in your palette.
 - **Network Interfaces** - System and bridge network config
 - **Get Unused Port** - Find available port
 
-#### ⚙️ Config Editor (9 operations)
+#### Config Editor (9 operations)
 - **Get/Update Config** - Manage config.json
 - **Plugin Configuration** - Get/update plugin configs
 - **Enable/Disable Plugins** - Toggle plugin status
 - **Config Backups** - List, get, and delete backups
 
-#### 🔌 Plugin Management (8 operations)
+#### Plugin Management (8 operations)
 - **List Installed** - Show installed plugins
 - **Search Plugins** - Search npm registry
 - **Lookup Plugin** - Get plugin details
@@ -159,13 +159,13 @@ After installation, restart n8n to see the node in your palette.
 - **Release Info** - Latest GitHub release
 - **Get Alias** - Resolve plugin alias
 
-#### 🏠 Accessories Control (4 operations)
+#### Accessories Control (4 operations)
 - **List Accessories** - Get all HomeKit accessories
 - **Get Layout** - Room and accessory layout
 - **Get Accessory** - Single accessory details
 - **Set Characteristic** - Control accessory (turn on/off, brightness, etc.)
 
-#### 👥 User Management (8 operations)
+#### User Management (8 operations)
 - **List Users** - Get all users
 - **Create User** - Add new user
 - **Update User** - Modify user details
@@ -175,7 +175,7 @@ After installation, restart n8n to see the node in your palette.
 - **Activate OTP** - Enable 2FA
 - **Deactivate OTP** - Disable 2FA
 
-#### 📊 Status Monitoring (10 operations)
+#### Status Monitoring (10 operations)
 - **CPU Info** - Load, history, temperature
 - **RAM Info** - Memory usage and history
 - **Network Info** - Transfer statistics
@@ -187,26 +187,26 @@ After installation, restart n8n to see the node in your palette.
 - **Node.js Info** - Node version and updates
 - **RPi Throttled** - Raspberry Pi throttling status
 
-#### 🛠️ Platform Tools (9 operations)
+#### Platform Tools (9 operations)
 - **Linux Host Control** - Restart/shutdown host
 - **Docker Management** - Startup script and container control
 - **HB Service Settings** - Homebridge startup configuration
 - **Log Management** - Download and truncate logs
 
-#### 💾 Backup & Restore (9 operations)
+#### Backup & Restore (9 operations)
 - **Create Backup** - Manual backup creation
 - **Download Backup** - Get backup file
 - **Scheduled Backups** - List and manage auto-backups
 - **Restore Operations** - Restore from backup
 - **Post-Backup Restart** - Restart after restore
 
-#### 🎬 Setup Wizard (2 operations)
+#### Setup Wizard (2 operations)
 - **Create First User** - Initial setup
 - **Get Setup Token** - Setup authentication
 
 ---
 
-## 🔑 Credentials
+## Credentials
 
 ### Homebridge API Credentials
 
@@ -216,7 +216,7 @@ Configure the following in n8n:
 |-------|-------------|----------|---------|
 | **Server URL** | Homebridge server URL with port | Yes | `http://192.168.1.100:8581` |
 | **Username** | Your Homebridge username | Yes | `admin` |
-| **Password** | Your Homebridge password | Yes | `••••••••` |
+| **Password** | Your Homebridge password | Yes | `********` |
 | **Two-Factor Code** | 2FA code if enabled | No | `123456` |
 
 **Important Notes:**
@@ -226,30 +226,30 @@ Configure the following in n8n:
 
 ---
 
-## 💡 Usage Examples
+## Usage Examples
 
 ### Example 1: Basic Authentication and Status
 
 ```javascript
 // Node 1: Login
 {
-  "resource": "auth",
-  "operation": "login"
+**"resource": "auth",
+**"operation": "login"
 }
 
 // Node 2: Get Status (connected to Node 1)
 {
-  "resource": "status",
-  "operation": "getHomebridgeStatus"
+**"resource": "status",
+**"operation": "getHomebridgeStatus"
 }
 
 // Output:
 {
-  "status": "up",
-  "consolePort": 8581,
-  "port": 51826,
-  "pin": "031-45-154",
-  "username": "CC:22:3D:E3:CE:30"
+**"status": "up",
+**"consolePort": 8581,
+**"port": 51826,
+**"pin": "031-45-154",
+**"username": "CC:22:3D:E3:CE:30"
 }
 ```
 
@@ -258,20 +258,20 @@ Configure the following in n8n:
 ```javascript
 // Turn light ON
 {
-  "resource": "accessories",
-  "operation": "setCharacteristic",
-  "uniqueId": "00000000-0000-1000-8000-0026BB765291",
-  "characteristicType": "On",
-  "value": "true"
+**"resource": "accessories",
+**"operation": "setCharacteristic",
+**"uniqueId": "00000000-0000-1000-8000-0026BB765291",
+**"characteristicType": "On",
+**"value": "true"
 }
 
 // Set brightness to 75%
 {
-  "resource": "accessories",
-  "operation": "setCharacteristic",
-  "uniqueId": "00000000-0000-1000-8000-0026BB765291",
-  "characteristicType": "Brightness",
-  "value": "75"
+**"resource": "accessories",
+**"operation": "setCharacteristic",
+**"uniqueId": "00000000-0000-1000-8000-0026BB765291",
+**"characteristicType": "Brightness",
+**"value": "75"
 }
 ```
 
@@ -280,23 +280,23 @@ Configure the following in n8n:
 ```javascript
 // Search for camera plugins
 {
-  "resource": "plugins",
-  "operation": "search",
-  "query": "camera"
+**"resource": "plugins",
+**"operation": "search",
+**"query": "camera"
 }
 
 // Get specific plugin info
 {
-  "resource": "plugins",
-  "operation": "lookup",
-  "pluginName": "homebridge-camera-ffmpeg"
+**"resource": "plugins",
+**"operation": "lookup",
+**"pluginName": "homebridge-camera-ffmpeg"
 }
 
 // Get plugin changelog
 {
-  "resource": "plugins",
-  "operation": "getChangelog",
-  "pluginName": "homebridge-camera-ffmpeg"
+**"resource": "plugins",
+**"operation": "getChangelog",
+**"pluginName": "homebridge-camera-ffmpeg"
 }
 ```
 
@@ -325,9 +325,9 @@ Configure the following in n8n:
 // 1. Login
 // 2. Get temperature sensor
 {
-  "resource": "accessories",
-  "operation": "getAccessory",
-  "uniqueId": "temperature-sensor-id"
+**"resource": "accessories",
+**"operation": "getAccessory",
+**"uniqueId": "temperature-sensor-id"
 }
 
 // 3. Check temperature value
@@ -351,7 +351,7 @@ Configure the following in n8n:
 
 ---
 
-## 🤖 MCP Integration
+## MCP Integration
 
 ### What is MCP?
 
@@ -365,26 +365,26 @@ Each operation has a clear schema:
 
 ```json
 {
-  "name": "homebridge_accessories_setCharacteristic",
-  "description": "Control a HomeKit accessory by setting a characteristic value",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "uniqueId": {
-        "type": "string",
-        "description": "Unique ID of the accessory"
-      },
-      "characteristicType": {
-        "type": "string",
-        "description": "Characteristic to modify (On, Brightness, Temperature, etc.)"
-      },
-      "value": {
-        "type": "string",
-        "description": "Value to set"
-      }
-    },
-    "required": ["uniqueId", "characteristicType", "value"]
-  }
+**"name": "homebridge_accessories_setCharacteristic",
+**"description": "Control a HomeKit accessory by setting a characteristic value",
+**"inputSchema": {
+****"type": "object",
+****"properties": {
+******"uniqueId": {
+********"type": "string",
+********"description": "Unique ID of the accessory"
+******},
+******"characteristicType": {
+********"type": "string",
+********"description": "Characteristic to modify (On, Brightness, Temperature, etc.)"
+******},
+******"value": {
+********"type": "string",
+********"description": "Value to set"
+******}
+****},
+****"required": ["uniqueId", "characteristicType", "value"]
+**}
 }
 ```
 
@@ -394,11 +394,11 @@ Execute multiple operations efficiently:
 
 ```javascript
 {
-  "operations": [
-    { "resource": "status", "operation": "getHomebridgeStatus" },
-    { "resource": "accessories", "operation": "list" },
-    { "resource": "plugins", "operation": "listInstalled" }
-  ]
+**"operations": [
+****{ "resource": "status", "operation": "getHomebridgeStatus" },
+****{ "resource": "accessories", "operation": "list" },
+****{ "resource": "plugins", "operation": "listInstalled" }
+**]
 }
 ```
 
@@ -408,13 +408,13 @@ Every response includes metadata:
 
 ```json
 {
-  "data": { "status": "up", ... },
-  "_metadata": {
-    "resource": "status",
-    "operation": "getHomebridgeStatus",
-    "executedAt": "2025-01-06T12:00:00.000Z",
-    "success": true
-  }
+**"data": { "status": "up", ... },
+**"_metadata": {
+****"resource": "status",
+****"operation": "getHomebridgeStatus",
+****"executedAt": "2025-01-06T12:00:00.000Z",
+****"success": true
+**}
 }
 ```
 
@@ -424,9 +424,9 @@ User-friendly error messages for AI agents:
 
 ```json
 {
-  "error": "Unauthorized",
-  "message": "Access token is invalid or expired. Please authenticate again.",
-  "statusCode": 401
+**"error": "Unauthorized",
+**"message": "Access token is invalid or expired. Please authenticate again.",
+**"statusCode": 401
 }
 ```
 
@@ -444,16 +444,16 @@ Agent:
 2. Find: living room light uniqueId
 3. Execute: homebridge_accessories_setCharacteristic (On=true)
 4. Execute: homebridge_accessories_setCharacteristic (Brightness=50)
-5. Respond: "✅ Living room lights are now on at 50% brightness"
+5. Respond: " Living room lights are now on at 50% brightness"
 ```
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues and Solutions
 
-#### ❌ Authentication Failed
+#### Authentication Failed
 
 **Problem**: Cannot login to Homebridge
 
@@ -463,7 +463,7 @@ Agent:
 - If 2FA is enabled, provide correct OTP code
 - Ensure Homebridge server is running and accessible
 
-#### ❌ No Access Token Available
+#### No Access Token Available
 
 **Problem**: Error about missing access token
 
@@ -472,7 +472,7 @@ Agent:
 - OR manually enter access token in "Access Token" field
 - Ensure Login node executed successfully
 
-#### ❌ Network Timeout
+#### Network Timeout
 
 **Problem**: Requests timeout or fail to connect
 
@@ -481,7 +481,7 @@ Agent:
 - Verify firewall settings allow connection on port 8581
 - Increase timeout if server is slow (edit GenericFunctions.ts)
 
-#### ❌ Invalid JSON Parameter
+#### Invalid JSON Parameter
 
 **Problem**: Config update fails with JSON error
 
@@ -490,7 +490,7 @@ Agent:
 - Check for proper escaping of special characters
 - Use JSON.stringify() if building config dynamically
 
-#### ❌ Accessory Not Found
+#### Accessory Not Found
 
 **Problem**: Cannot control specific accessory
 
@@ -510,33 +510,33 @@ For detailed logging:
 
 ---
 
-## 📊 Performance Tips
+## Performance Tips
 
 ### Optimize Your Workflows
 
 1. **Reuse Access Tokens**
-   - Login once, pass token to all subsequent nodes
-   - Avoid unnecessary re-authentication
+** - Login once, pass token to all subsequent nodes
+** - Avoid unnecessary re-authentication
 
 2. **Use Batch Operations**
-   - Combine multiple operations when possible
-   - Reduces API calls and improves speed
+** - Combine multiple operations when possible
+** - Reduces API calls and improves speed
 
 3. **Cache Frequently Used Data**
-   - Store accessory lists, plugin configs
-   - Refresh only when needed
+** - Store accessory lists, plugin configs
+** - Refresh only when needed
 
 4. **Implement Error Handling**
-   - Enable "Continue on Fail" for non-critical operations
-   - Add retry logic for transient failures
+** - Enable "Continue on Fail" for non-critical operations
+** - Add retry logic for transient failures
 
 5. **Limit Data Retrieval**
-   - Use filters to get only what you need
-   - Avoid listing all accessories if you need just one
+** - Use filters to get only what you need
+** - Avoid listing all accessories if you need just one
 
 ---
 
-## 📚 Resources
+## Resources
 
 ### Documentation
 - [Implementation Guide](./IMPLEMENTATION_GUIDE.md) - Complete development guide
@@ -558,7 +558,7 @@ For detailed logging:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please follow these steps:
 
@@ -590,23 +590,23 @@ npm run dev
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### File Structure
 
 ```
 n8n-nodes-homebridge/
 ├── credentials/
-│   └── HomebridgeApi.credentials.ts
+│** └── HomebridgeApi.credentials.ts
 ├── nodes/Homebridge/
-│   ├── Homebridge.node.ts
-│   ├── HomebridgeDescription.ts
-│   ├── GenericFunctions.ts        # Helper functions
-│   ├── types.ts                   # TypeScript types
-│   ├── constants.ts               # Configuration
-│   └── homebridge-logo.svg
+│** ├── Homebridge.node.ts
+│** ├── HomebridgeDescription.ts
+│** ├── GenericFunctions.ts********# Helper functions
+│** ├── types.ts****************** # TypeScript types
+│** ├── constants.ts************** # Configuration
+│** └── homebridge-logo.svg
 ├── examples/
-│   └── workflows.json
+│** └── workflows.json
 ├── IMPLEMENTATION_GUIDE.md
 └── README.md
 ```
@@ -620,7 +620,7 @@ n8n-nodes-homebridge/
 
 ---
 
-## 📈 Roadmap
+## Roadmap
 
 ### Future Features
 
@@ -635,7 +635,7 @@ n8n-nodes-homebridge/
 
 ---
 
-## 📄 License
+## License
 
 [MIT](https://github.com/paolo-trivi/n8n-nodes-homebridge/blob/main/LICENSE.md)
 
@@ -643,7 +643,7 @@ Copyright (c) 2025 paolo-trivi
 
 ---
 
-## 🌟 Acknowledgments
+## Acknowledgments
 
 - Thanks to the [n8n team](https://n8n.io/) for the amazing automation platform
 - Thanks to the [Homebridge team](https://homebridge.io/) for HomeKit integration
@@ -651,7 +651,7 @@ Copyright (c) 2025 paolo-trivi
 
 ---
 
-## 📊 Stats
+## Stats
 
 - **79 API Endpoints** - Complete coverage
 - **10 Resource Categories** - Comprehensive organization
@@ -661,9 +661,9 @@ Copyright (c) 2025 paolo-trivi
 
 ---
 
-**Made with ❤️ by [paolo-trivi](https://github.com/paolo-trivi)**
+**Made with**by [paolo-trivi](https://github.com/paolo-trivi)**
 
-**Star ⭐ this repo if you find it useful!**
+**Star**this repo if you find it useful!**
 
 ---
 

@@ -1,38 +1,38 @@
 # Homebridge n8n Node - Implementation Guide
 
-## 📚 Complete Development Guide
+## Complete Development Guide
 
 This guide provides comprehensive information about the Homebridge n8n node implementation, including architecture, best practices, and optimization for MCP (Model Context Protocol).
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 ### File Structure
 
 ```
 n8n-nodes-homebridge/
 ├── credentials/
-│   └── HomebridgeApi.credentials.ts      # Authentication credentials
+│** └── HomebridgeApi.credentials.ts******# Authentication credentials
 ├── nodes/
-│   └── Homebridge/
-│       ├── Homebridge.node.ts            # Original node implementation
-│       ├── Homebridge.node.improved.ts   # Improved implementation with GenericFunctions
-│       ├── HomebridgeDescription.ts      # Complete operation descriptions
-│       ├── GenericFunctions.ts           # Centralized helper functions
-│       ├── types.ts                      # TypeScript type definitions
-│       ├── constants.ts                  # Configuration constants
-│       └── homebridge-logo.svg           # Node icon
+│** └── Homebridge/
+│****** ├── Homebridge.node.ts************# Original node implementation
+│****** ├── Homebridge.node.improved.ts** # Improved implementation with GenericFunctions
+│****** ├── HomebridgeDescription.ts******# Complete operation descriptions
+│****** ├── GenericFunctions.ts********** # Centralized helper functions
+│****** ├── types.ts**********************# TypeScript type definitions
+│****** ├── constants.ts******************# Configuration constants
+│****** └── homebridge-logo.svg********** # Node icon
 ├── examples/
-│   └── workflows.json                    # Ready-to-use workflow examples
-├── package.json                          # Node package configuration
-├── tsconfig.json                         # TypeScript configuration
-└── README.md                             # User documentation
+│** └── workflows.json********************# Ready-to-use workflow examples
+├── package.json**************************# Node package configuration
+├── tsconfig.json************************ # TypeScript configuration
+└── README.md**************************** # User documentation
 ```
 
 ---
 
-## 🔧 Core Components
+## Core Components
 
 ### 1. **GenericFunctions.ts**
 
@@ -98,30 +98,30 @@ Configuration values:
 
 ---
 
-## 🎯 Implementation Best Practices
+## Implementation Best Practices
 
 ### 1. **Error Handling**
 
 ```typescript
 try {
-  const result = await homebridgeApiRequest.call(
-    this,
-    'GET',
-    '/api/accessories',
-    undefined,
-    undefined,
-    i,
-  );
+**const result = await homebridgeApiRequest.call(
+****this,
+****'GET',
+****'/api/accessories',
+****undefined,
+****undefined,
+****i,
+**);
 } catch (error) {
-  // Error is already transformed to user-friendly message
-  if (this.continueOnFail()) {
-    returnData.push({
-      json: { error: error.message },
-      pairedItem: { item: i },
-    });
-    continue;
-  }
-  throw error;
+**// Error is already transformed to user-friendly message
+**if (this.continueOnFail()) {
+****returnData.push({
+******json: { error: error.message },
+******pairedItem: { item: i },
+****});
+****continue;
+**}
+**throw error;
 }
 ```
 
@@ -134,9 +134,9 @@ const value = this.getNodeParameter('value', i) as string;
 
 // Validate all required parameters
 GenericFunctions.validateRequiredParameters.call(
-  this,
-  { uniqueId, characteristicType, value },
-  i,
+**this,
+**{ uniqueId, characteristicType, value },
+**i,
 );
 ```
 
@@ -145,10 +145,10 @@ GenericFunctions.validateRequiredParameters.call(
 ```typescript
 const configString = this.getNodeParameter('config', i) as string;
 const config = GenericFunctions.parseJsonSafely.call(
-  this,
-  configString,
-  'config',
-  i,
+**this,
+**configString,
+**'config',
+**i,
 );
 ```
 
@@ -166,21 +166,21 @@ const responseData = await homebridgeApiRequest.call(...);
 const simplifiedData = GenericFunctions.simplifyOutput(responseData);
 
 returnData.push({
-  json: {
-    ...simplifiedData,
-    _metadata: {
-      resource,
-      operation,
-      executedAt: new Date().toISOString(),
-      success: true,
-    },
-  },
+**json: {
+****...simplifiedData,
+****_metadata: {
+******resource,
+******operation,
+******executedAt: new Date().toISOString(),
+******success: true,
+****},
+**},
 });
 ```
 
 ---
 
-## 🤖 MCP (Model Context Protocol) Optimization
+## MCP (Model Context Protocol) Optimization
 
 ### What is MCP?
 
@@ -189,44 +189,44 @@ MCP is a protocol that allows AI models to interact with external tools and APIs
 ### MCP Features
 
 1. **Tool Definitions**
-   - Each operation has a structured schema
-   - Clear input/output definitions
-   - Descriptive names and parameters
+** - Each operation has a structured schema
+** - Clear input/output definitions
+** - Descriptive names and parameters
 
 2. **Batch Operations**
-   - Execute multiple operations in one request
-   - Efficient for complex automations
-   - Reduced API calls
+** - Execute multiple operations in one request
+** - Efficient for complex automations
+** - Reduced API calls
 
 3. **Structured Metadata**
-   - Every response includes execution metadata
-   - Success/failure status
-   - Timestamps for auditing
+** - Every response includes execution metadata
+** - Success/failure status
+** - Timestamps for auditing
 
 ### Example MCP Tool Definition
 
 ```typescript
 {
-  name: "homebridge_accessories_setCharacteristic",
-  description: "Homebridge: Set value of an accessory characteristic",
-  inputSchema: {
-    type: "object",
-    properties: {
-      uniqueId: {
-        type: "string",
-        description: "The unique ID of the accessory"
-      },
-      characteristicType: {
-        type: "string",
-        description: "The characteristic type to set (e.g., 'On', 'Brightness')"
-      },
-      value: {
-        type: "string",
-        description: "The value to set"
-      }
-    },
-    required: ["uniqueId", "characteristicType", "value"]
-  }
+**name: "homebridge_accessories_setCharacteristic",
+**description: "Homebridge: Set value of an accessory characteristic",
+**inputSchema: {
+****type: "object",
+****properties: {
+******uniqueId: {
+********type: "string",
+********description: "The unique ID of the accessory"
+******},
+******characteristicType: {
+********type: "string",
+********description: "The characteristic type to set (e.g., 'On', 'Brightness')"
+******},
+******value: {
+********type: "string",
+********description: "The value to set"
+******}
+****},
+****required: ["uniqueId", "characteristicType", "value"]
+**}
 }
 ```
 
@@ -234,20 +234,20 @@ MCP is a protocol that allows AI models to interact with external tools and APIs
 
 ```typescript
 const operations = [
-  { method: 'GET', endpoint: '/api/status/homebridge' },
-  { method: 'GET', endpoint: '/api/accessories' },
-  { method: 'GET', endpoint: '/api/plugins' },
+**{ method: 'GET', endpoint: '/api/status/homebridge' },
+**{ method: 'GET', endpoint: '/api/accessories' },
+**{ method: 'GET', endpoint: '/api/plugins' },
 ];
 
 const results = await GenericFunctions.executeBatchOperations.call(
-  this,
-  operations,
+**this,
+**operations,
 );
 ```
 
 ---
 
-## 📊 Complete API Endpoint Mapping
+## Complete API Endpoint Mapping
 
 ### Authentication (4 endpoints)
 - `POST /api/auth/login` - Login with credentials
@@ -349,11 +349,11 @@ const results = await GenericFunctions.executeBatchOperations.call(
 - `POST /api/setup-wizard/create-first-user` - Create first user
 - `GET /api/setup-wizard/get-setup-wizard-token` - Get setup token
 
-**Total: 79 API endpoints - ALL IMPLEMENTED** ✅
+**Total: 79 API endpoints - ALL IMPLEMENTED** 
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Unit Testing
 
@@ -363,24 +363,24 @@ Create tests for GenericFunctions:
 import * as GenericFunctions from './GenericFunctions';
 
 describe('GenericFunctions', () => {
-  describe('isValidUrl', () => {
-    it('should validate correct URLs', () => {
-      expect(GenericFunctions.isValidUrl('http://localhost:8581')).toBe(true);
-      expect(GenericFunctions.isValidUrl('https://homebridge.local')).toBe(true);
-    });
+**describe('isValidUrl', () => {
+****it('should validate correct URLs', () => {
+******expect(GenericFunctions.isValidUrl('http://localhost:8581')).toBe(true);
+******expect(GenericFunctions.isValidUrl('https://homebridge.local')).toBe(true);
+****});
 
-    it('should reject invalid URLs', () => {
-      expect(GenericFunctions.isValidUrl('not-a-url')).toBe(false);
-      expect(GenericFunctions.isValidUrl('')).toBe(false);
-    });
-  });
+****it('should reject invalid URLs', () => {
+******expect(GenericFunctions.isValidUrl('not-a-url')).toBe(false);
+******expect(GenericFunctions.isValidUrl('')).toBe(false);
+****});
+**});
 
-  describe('formatBytes', () => {
-    it('should format bytes correctly', () => {
-      expect(GenericFunctions.formatBytes(1024)).toBe('1 KB');
-      expect(GenericFunctions.formatBytes(1048576)).toBe('1 MB');
-    });
-  });
+**describe('formatBytes', () => {
+****it('should format bytes correctly', () => {
+******expect(GenericFunctions.formatBytes(1024)).toBe('1 KB');
+******expect(GenericFunctions.formatBytes(1048576)).toBe('1 MB');
+****});
+**});
 });
 ```
 
@@ -396,38 +396,38 @@ Test actual API calls in a development environment:
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ### Publishing to npm
 
 1. Update version in `package.json`
 2. Build the package:
-   ```bash
-   npm run build
-   ```
+** ```bash
+** npm run build
+** ```
 3. Test locally:
-   ```bash
-   npm link
-   ```
+** ```bash
+** npm link
+** ```
 4. Publish:
-   ```bash
-   npm publish
-   ```
+** ```bash
+** npm publish
+** ```
 
 ### Installing in n8n
 
 1. Via UI:
-   - Settings > Community Nodes
-   - Install `n8n-nodes-homebridge`
+** - Settings > Community Nodes
+** - Install `n8n-nodes-homebridge`
 
 2. Via CLI:
-   ```bash
-   npm install n8n-nodes-homebridge
-   ```
+** ```bash
+** npm install n8n-nodes-homebridge
+** ```
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -453,79 +453,79 @@ Test actual API calls in a development environment:
 
 ---
 
-## 📈 Performance Optimization
+## Performance Optimization
 
 ### Best Practices
 
 1. **Reuse Access Tokens**
-   - Login once, use token for multiple operations
-   - Pass token between nodes instead of re-authenticating
+** - Login once, use token for multiple operations
+** - Pass token between nodes instead of re-authenticating
 
 2. **Batch Operations**
-   - Use MCP batch operations for multiple calls
-   - Reduces overhead and improves performance
+** - Use MCP batch operations for multiple calls
+** - Reduces overhead and improves performance
 
 3. **Caching**
-   - Cache frequently accessed data (accessories, plugins)
-   - Set appropriate TTL based on data volatility
+** - Cache frequently accessed data (accessories, plugins)
+** - Set appropriate TTL based on data volatility
 
 4. **Pagination**
-   - Use pagination for large datasets
-   - Limit results to what you actually need
+** - Use pagination for large datasets
+** - Limit results to what you actually need
 
 5. **Error Handling**
-   - Enable "Continue on Fail" for non-critical operations
-   - Implement fallback logic for resilience
+** - Enable "Continue on Fail" for non-critical operations
+** - Implement fallback logic for resilience
 
 ---
 
-## 🔐 Security Best Practices
+## Security Best Practices
 
 1. **Credentials Storage**
-   - Always use n8n credentials, never hardcode
-   - Enable 2FA on Homebridge for extra security
+** - Always use n8n credentials, never hardcode
+** - Enable 2FA on Homebridge for extra security
 
 2. **HTTPS**
-   - Use HTTPS for Homebridge server
-   - Verify SSL certificates in production
+** - Use HTTPS for Homebridge server
+** - Verify SSL certificates in production
 
 3. **Access Control**
-   - Create dedicated n8n user with minimal permissions
-   - Regularly rotate passwords
+** - Create dedicated n8n user with minimal permissions
+** - Regularly rotate passwords
 
 4. **Audit Logging**
-   - Monitor workflow executions
-   - Track API usage and errors
+** - Monitor workflow executions
+** - Track API usage and errors
 
 ---
 
-## 📝 Contributing
+## Contributing
 
 ### Development Setup
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/paolo-trivi/n8n-nodes-homebridge.git
-   cd n8n-nodes-homebridge
-   ```
+** ```bash
+** git clone https://github.com/paolo-trivi/n8n-nodes-homebridge.git
+** cd n8n-nodes-homebridge
+** ```
 
 2. Install dependencies:
-   ```bash
-   npm install
-   ```
+** ```bash
+** npm install
+** ```
 
 3. Start development mode:
-   ```bash
-   npm run dev
-   ```
+** ```bash
+** npm run dev
+** ```
 
 4. Make changes and test locally
 
 5. Build and validate:
-   ```bash
-   npm run build
-   npm run lint
-   ```
+** ```bash
+** npm run build
+** npm run lint
+** ```
 
 ### Contribution Guidelines
 
@@ -538,7 +538,7 @@ Test actual API calls in a development environment:
 
 ---
 
-## 📚 Resources
+## Resources
 
 - [n8n Documentation](https://docs.n8n.io/)
 - [Homebridge API Reference](https://github.com/homebridge/homebridge-config-ui-x/wiki/API-Reference)
@@ -548,7 +548,7 @@ Test actual API calls in a development environment:
 
 ---
 
-## 📧 Support
+## Support
 
 For issues, questions, or contributions:
 - GitHub Issues: https://github.com/paolo-trivi/n8n-nodes-homebridge/issues
@@ -556,7 +556,7 @@ For issues, questions, or contributions:
 
 ---
 
-## 📄 License
+## License
 
 MIT License - see LICENSE.md for details
 
