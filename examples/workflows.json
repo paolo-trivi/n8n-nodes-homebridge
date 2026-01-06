@@ -1,0 +1,548 @@
+{
+  "name": "Homebridge n8n Workflow Examples",
+  "description": "Ready-to-use workflow examples for Homebridge integration",
+  "version": "1.0.0",
+  "workflows": [
+    {
+      "name": "Simple Authentication and Status Check",
+      "description": "Login to Homebridge and check system status",
+      "nodes": [
+        {
+          "name": "Login to Homebridge",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "auth",
+            "operation": "login"
+          },
+          "credentials": {
+            "homebridgeApi": "Homebridge Credentials"
+          }
+        },
+        {
+          "name": "Get Homebridge Status",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "status",
+            "operation": "getHomebridgeStatus"
+          }
+        },
+        {
+          "name": "Get CPU Info",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "status",
+            "operation": "getCPU"
+          }
+        }
+      ],
+      "connections": {
+        "Login to Homebridge": {
+          "main": [
+            [
+              { "node": "Get Homebridge Status", "type": "main", "index": 0 },
+              { "node": "Get CPU Info", "type": "main", "index": 0 }
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "Control Smart Light",
+      "description": "Turn on/off a smart light and adjust brightness",
+      "nodes": [
+        {
+          "name": "Login",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "auth",
+            "operation": "login"
+          }
+        },
+        {
+          "name": "List Accessories",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "accessories",
+            "operation": "list"
+          }
+        },
+        {
+          "name": "Turn Light On",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "accessories",
+            "operation": "setCharacteristic",
+            "uniqueId": "your-light-unique-id",
+            "characteristicType": "On",
+            "value": "true"
+          }
+        },
+        {
+          "name": "Set Brightness",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "accessories",
+            "operation": "setCharacteristic",
+            "uniqueId": "your-light-unique-id",
+            "characteristicType": "Brightness",
+            "value": "80"
+          }
+        }
+      ],
+      "connections": {
+        "Login": {
+          "main": [[{ "node": "List Accessories" }]]
+        },
+        "List Accessories": {
+          "main": [[{ "node": "Turn Light On" }]]
+        },
+        "Turn Light On": {
+          "main": [[{ "node": "Set Brightness" }]]
+        }
+      }
+    },
+    {
+      "name": "Automated Backup",
+      "description": "Create backup every day at 3 AM",
+      "nodes": [
+        {
+          "name": "Schedule Trigger",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "parameters": {
+            "rule": {
+              "interval": [
+                {
+                  "field": "hours",
+                  "hoursInterval": 24
+                }
+              ]
+            },
+            "triggerTimes": {
+              "item": [
+                {
+                  "mode": "everyX",
+                  "hour": 3,
+                  "minute": 0
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login to Homebridge",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "auth",
+            "operation": "login"
+          }
+        },
+        {
+          "name": "Create Backup",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "backup",
+            "operation": "createBackup"
+          }
+        },
+        {
+          "name": "Send Notification",
+          "type": "n8n-nodes-base.emailSend",
+          "parameters": {
+            "subject": "Homebridge Backup Complete",
+            "text": "Daily backup completed successfully at {{ $now }}"
+          }
+        }
+      ],
+      "connections": {
+        "Schedule Trigger": {
+          "main": [[{ "node": "Login to Homebridge" }]]
+        },
+        "Login to Homebridge": {
+          "main": [[{ "node": "Create Backup" }]]
+        },
+        "Create Backup": {
+          "main": [[{ "node": "Send Notification" }]]
+        }
+      }
+    },
+    {
+      "name": "Monitor Temperature and Alert",
+      "description": "Check temperature sensor and send alert if too high",
+      "nodes": [
+        {
+          "name": "Every 5 Minutes",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "parameters": {
+            "rule": {
+              "interval": [
+                {
+                  "field": "minutes",
+                  "minutesInterval": 5
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "auth",
+            "operation": "login"
+          }
+        },
+        {
+          "name": "Get Temperature Sensor",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "accessories",
+            "operation": "getAccessory",
+            "uniqueId": "your-temperature-sensor-id"
+          }
+        },
+        {
+          "name": "Check Temperature",
+          "type": "n8n-nodes-base.if",
+          "parameters": {
+            "conditions": {
+              "number": [
+                {
+                  "value1": "={{ $json.CurrentTemperature }}",
+                  "operation": "larger",
+                  "value2": 30
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send Alert",
+          "type": "n8n-nodes-base.emailSend",
+          "parameters": {
+            "subject": "Temperature Alert!",
+            "text": "Temperature is {{ $json.CurrentTemperature }}°C - Above threshold!"
+          }
+        }
+      ],
+      "connections": {
+        "Every 5 Minutes": {
+          "main": [[{ "node": "Login" }]]
+        },
+        "Login": {
+          "main": [[{ "node": "Get Temperature Sensor" }]]
+        },
+        "Get Temperature Sensor": {
+          "main": [[{ "node": "Check Temperature" }]]
+        },
+        "Check Temperature": {
+          "main": [[{ "node": "Send Alert" }]]
+        }
+      }
+    },
+    {
+      "name": "Plugin Management",
+      "description": "Search, check updates, and manage plugins",
+      "nodes": [
+        {
+          "name": "Login",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "auth",
+            "operation": "login"
+          }
+        },
+        {
+          "name": "List Installed Plugins",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "plugins",
+            "operation": "listInstalled"
+          }
+        },
+        {
+          "name": "Search for New Plugins",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "plugins",
+            "operation": "search",
+            "query": "camera"
+          }
+        },
+        {
+          "name": "Get Plugin Info",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "plugins",
+            "operation": "lookup",
+            "pluginName": "homebridge-camera-ffmpeg"
+          }
+        },
+        {
+          "name": "Get Plugin Changelog",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "plugins",
+            "operation": "getChangelog",
+            "pluginName": "homebridge-camera-ffmpeg"
+          }
+        }
+      ],
+      "connections": {
+        "Login": {
+          "main": [
+            [
+              { "node": "List Installed Plugins" },
+              { "node": "Search for New Plugins" }
+            ]
+          ]
+        },
+        "List Installed Plugins": {
+          "main": [[{ "node": "Get Plugin Info" }]]
+        },
+        "Get Plugin Info": {
+          "main": [[{ "node": "Get Plugin Changelog" }]]
+        }
+      }
+    },
+    {
+      "name": "System Health Monitoring",
+      "description": "Monitor CPU, RAM, and disk usage with alerts",
+      "nodes": [
+        {
+          "name": "Every Hour",
+          "type": "n8n-nodes-base.scheduleTrigger",
+          "parameters": {
+            "rule": {
+              "interval": [
+                {
+                  "field": "hours",
+                  "hoursInterval": 1
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "auth",
+            "operation": "login"
+          }
+        },
+        {
+          "name": "Get CPU Info",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "status",
+            "operation": "getCPU"
+          }
+        },
+        {
+          "name": "Get RAM Info",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "status",
+            "operation": "getRAM"
+          }
+        },
+        {
+          "name": "Get Uptime",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "status",
+            "operation": "getUptime"
+          }
+        },
+        {
+          "name": "Merge Data",
+          "type": "n8n-nodes-base.merge",
+          "parameters": {
+            "mode": "append"
+          }
+        },
+        {
+          "name": "Check Thresholds",
+          "type": "n8n-nodes-base.code",
+          "parameters": {
+            "code": "const items = $input.all();\nconst alerts = [];\n\nfor (const item of items) {\n  if (item.json.currentLoad > 80) {\n    alerts.push({ type: 'CPU', value: item.json.currentLoad, message: 'CPU usage above 80%' });\n  }\n  if (item.json.usedPercent > 85) {\n    alerts.push({ type: 'RAM', value: item.json.usedPercent, message: 'RAM usage above 85%' });\n  }\n}\n\nreturn alerts.map(alert => ({ json: alert }));"
+          }
+        },
+        {
+          "name": "Send Alert",
+          "type": "n8n-nodes-base.emailSend",
+          "parameters": {
+            "subject": "Homebridge Health Alert",
+            "text": "{{ $json.type }}: {{ $json.message }}\nValue: {{ $json.value }}%"
+          }
+        }
+      ],
+      "connections": {
+        "Every Hour": {
+          "main": [[{ "node": "Login" }]]
+        },
+        "Login": {
+          "main": [
+            [
+              { "node": "Get CPU Info" },
+              { "node": "Get RAM Info" },
+              { "node": "Get Uptime" }
+            ]
+          ]
+        },
+        "Get CPU Info": {
+          "main": [[{ "node": "Merge Data", "type": "main", "index": 0 }]]
+        },
+        "Get RAM Info": {
+          "main": [[{ "node": "Merge Data", "type": "main", "index": 1 }]]
+        },
+        "Get Uptime": {
+          "main": [[{ "node": "Merge Data", "type": "main", "index": 2 }]]
+        },
+        "Merge Data": {
+          "main": [[{ "node": "Check Thresholds" }]]
+        },
+        "Check Thresholds": {
+          "main": [[{ "node": "Send Alert" }]]
+        }
+      }
+    },
+    {
+      "name": "Automated Server Restart",
+      "description": "Restart Homebridge server when needed",
+      "nodes": [
+        {
+          "name": "Webhook Trigger",
+          "type": "n8n-nodes-base.webhook",
+          "parameters": {
+            "path": "homebridge-restart",
+            "httpMethod": "POST",
+            "responseMode": "responseNode"
+          }
+        },
+        {
+          "name": "Login",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "auth",
+            "operation": "login"
+          }
+        },
+        {
+          "name": "Create Backup First",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "backup",
+            "operation": "createBackup"
+          }
+        },
+        {
+          "name": "Restart Server",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "server",
+            "operation": "restart"
+          }
+        },
+        {
+          "name": "Wait 30 Seconds",
+          "type": "n8n-nodes-base.wait",
+          "parameters": {
+            "amount": 30,
+            "unit": "seconds"
+          }
+        },
+        {
+          "name": "Check Status",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "status",
+            "operation": "getHomebridgeStatus"
+          }
+        },
+        {
+          "name": "Respond",
+          "type": "n8n-nodes-base.respondToWebhook",
+          "parameters": {
+            "respondWith": "json",
+            "responseBody": "={{ { success: true, status: $json.status, message: 'Server restarted successfully' } }}"
+          }
+        }
+      ],
+      "connections": {
+        "Webhook Trigger": {
+          "main": [[{ "node": "Login" }]]
+        },
+        "Login": {
+          "main": [[{ "node": "Create Backup First" }]]
+        },
+        "Create Backup First": {
+          "main": [[{ "node": "Restart Server" }]]
+        },
+        "Restart Server": {
+          "main": [[{ "node": "Wait 30 Seconds" }]]
+        },
+        "Wait 30 Seconds": {
+          "main": [[{ "node": "Check Status" }]]
+        },
+        "Check Status": {
+          "main": [[{ "node": "Respond" }]]
+        }
+      }
+    },
+    {
+      "name": "MCP Batch Operations",
+      "description": "Execute multiple operations in a single workflow for MCP",
+      "nodes": [
+        {
+          "name": "MCP Trigger",
+          "type": "n8n-nodes-base.manualTrigger"
+        },
+        {
+          "name": "Login",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "auth",
+            "operation": "login"
+          }
+        },
+        {
+          "name": "Batch Operations",
+          "type": "n8n-nodes-base.code",
+          "parameters": {
+            "code": "// Define batch operations for MCP\nconst operations = [\n  { resource: 'status', operation: 'getHomebridgeStatus' },\n  { resource: 'accessories', operation: 'list' },\n  { resource: 'plugins', operation: 'listInstalled' },\n  { resource: 'status', operation: 'getCPU' },\n  { resource: 'status', operation: 'getRAM' }\n];\n\nreturn operations.map(op => ({ json: op }));"
+          }
+        },
+        {
+          "name": "Execute Operation",
+          "type": "homebridge",
+          "parameters": {
+            "resource": "={{ $json.resource }}",
+            "operation": "={{ $json.operation }}"
+          }
+        },
+        {
+          "name": "Aggregate Results",
+          "type": "n8n-nodes-base.aggregate",
+          "parameters": {
+            "aggregate": "aggregateAllItemData"
+          }
+        }
+      ],
+      "connections": {
+        "MCP Trigger": {
+          "main": [[{ "node": "Login" }]]
+        },
+        "Login": {
+          "main": [[{ "node": "Batch Operations" }]]
+        },
+        "Batch Operations": {
+          "main": [[{ "node": "Execute Operation" }]]
+        },
+        "Execute Operation": {
+          "main": [[{ "node": "Aggregate Results" }]]
+        }
+      }
+    }
+  ]
+}
