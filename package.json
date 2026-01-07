@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-homebridge",
-  "version": "0.1.1",
+  "version": "0.1.2-beta0",
   "description": "n8n node for Homebridge API integration - control your HomeKit accessories and manage Homebridge server through n8n workflows",
   "keywords": [
     "n8n-community-node-package",
@@ -45,10 +45,12 @@
     ]
   },
   "devDependencies": {
+    "@types/node": "^25.0.3",
     "@typescript-eslint/parser": "~8.32.0",
     "eslint": "^8.57.0",
     "eslint-plugin-n8n-nodes-base": "^1.16.3",
     "gulp": "^5.0.0",
+    "n8n-workflow": "^2.3.0",
     "prettier": "^3.5.3",
     "typescript": "^5.8.2"
   },

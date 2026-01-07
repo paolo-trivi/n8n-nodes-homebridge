@@ -27,4 +27,8 @@
 		"nodes/**/*.json",
 		"package.json",
 	],
+	"exclude": [
+		"reference/**/*",
+		"node_modules"
+	]
 }
