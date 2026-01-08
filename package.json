@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-homebridge",
-  "version": "0.1.2-beta0",
+  "version": "0.1.2",
   "description": "n8n node for Homebridge API integration - control your HomeKit accessories and manage Homebridge server through n8n workflows",
   "keywords": [
     "n8n-community-node-package",

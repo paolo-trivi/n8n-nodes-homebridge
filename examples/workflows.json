@@ -1,1033 +1,268 @@
 {
-  "name": "Homebridge n8n Workflow Examples",
-  "description": "Ready-to-use workflow examples for Homebridge integration",
-  "version": "1.0.0",
-  "workflows": [
+  "nodes": [
     {
-      "name": "Simple Authentication and Status Check",
-      "description": "Login to Homebridge and check system status",
-      "nodes": [
-        {
-          "name": "Login to Homebridge",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          },
-          "credentials": {
-            "homebridgeApi": "Homebridge Credentials"
-          }
-        },
-        {
-          "name": "Get Homebridge Status",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "status",
-            "operation": "getHomebridgeStatus"
-          }
-        },
-        {
-          "name": "Get CPU Info",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "status",
-            "operation": "getCPU"
-          }
-        }
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -448,
+        0
       ],
-      "connections": {
-        "Login to Homebridge": {
-          "main": [
-            [
-              { "node": "Get Homebridge Status", "type": "main", "index": 0 },
-              { "node": "Get CPU Info", "type": "main", "index": 0 }
-            ]
-          ]
+      "id": "3c3173f1-f14a-482c-9ca3-ca7cf7073cba",
+      "name": "When chat message received",
+      "webhookId": "780fb05d-8eed-47ea-8bb4-d2c95a1f0670"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sei un assistente AI, usa i tool a disposizione per rispondere alla richiesta del utente:\n\n {{ $('When chat message received').item.json.chatInput }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        256,
+        0
+      ],
+      "id": "367e866b-6453-45c6-a35c-a25ed527ee77",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        224
+      ],
+      "id": "328f006a-b0ce-4c21-ac7e-bb52a62642b1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "KjbmhbE5ZP3C7nNJ",
+          "name": "Google Gemini(PaLM) Api account"
         }
       }
     },
     {
-      "name": "Control Smart Light",
-      "description": "Turn on/off a smart light and adjust brightness",
-      "nodes": [
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "List Accessories",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "list"
-          }
-        },
-        {
-          "name": "Turn Light On",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "setCharacteristic",
-            "uniqueId": "your-light-unique-id",
-            "characteristicType": "On",
-            "value": "true"
-          }
-        },
-        {
-          "name": "Set Brightness",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "setCharacteristic",
-            "uniqueId": "your-light-unique-id",
-            "characteristicType": "Brightness",
-            "value": "80"
-          }
-        }
+      "parameters": {
+        "additionalFields": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-homebridge.homebridge",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        0
       ],
-      "connections": {
-        "Login": {
-          "main": [[{ "node": "List Accessories" }]]
-        },
-        "List Accessories": {
-          "main": [[{ "node": "Turn Light On" }]]
-        },
-        "Turn Light On": {
-          "main": [[{ "node": "Set Brightness" }]]
+      "id": "eb296f5c-9b41-46fc-a1d0-44112ef9559e",
+      "name": "Login to homebridge",
+      "credentials": {
+        "homebridgeApi": {
+          "id": "pd6jLLDmS2xKSoP6",
+          "name": "Homebridge account"
         }
       }
     },
     {
-      "name": "Automated Backup",
-      "description": "Create backup every day at 3 AM",
-      "nodes": [
-        {
-          "name": "Schedule Trigger",
-          "type": "n8n-nodes-base.scheduleTrigger",
-          "parameters": {
-            "rule": {
-              "interval": [
-                {
-                  "field": "hours",
-                  "hoursInterval": 24
-                }
-              ]
-            },
-            "triggerTimes": {
-              "item": [
-                {
-                  "mode": "everyX",
-                  "hour": 3,
-                  "minute": 0
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Login to Homebridge",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "Create Backup",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "backup",
-            "operation": "createBackup"
-          }
-        },
-        {
-          "name": "Send Notification",
-          "type": "n8n-nodes-base.emailSend",
-          "parameters": {
-            "subject": "Homebridge Backup Complete",
-            "text": "Daily backup completed successfully at {{ $now }}"
-          }
-        }
+      "parameters": {
+        "resource": "accessories",
+        "accessToken": "={{ $('Login to homebridge').item.json.access_token }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-homebridge.homebridgeTool",
+      "typeVersion": 1,
+      "position": [
+        256,
+        224
       ],
-      "connections": {
-        "Schedule Trigger": {
-          "main": [[{ "node": "Login to Homebridge" }]]
-        },
-        "Login to Homebridge": {
-          "main": [[{ "node": "Create Backup" }]]
-        },
-        "Create Backup": {
-          "main": [[{ "node": "Send Notification" }]]
+      "id": "6210bd9e-0780-4802-aa4f-8024274c2ca3",
+      "name": "List",
+      "credentials": {
+        "homebridgeApi": {
+          "id": "pd6jLLDmS2xKSoP6",
+          "name": "Homebridge account"
         }
       }
     },
     {
-      "name": "Monitor Temperature and Alert",
-      "description": "Check temperature sensor and send alert if too high",
-      "nodes": [
-        {
-          "name": "Every 5 Minutes",
-          "type": "n8n-nodes-base.scheduleTrigger",
-          "parameters": {
-            "rule": {
-              "interval": [
-                {
-                  "field": "minutes",
-                  "minutesInterval": 5
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "Get Temperature Sensor",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "getAccessory",
-            "uniqueId": "your-temperature-sensor-id"
-          }
-        },
-        {
-          "name": "Check Temperature",
-          "type": "n8n-nodes-base.if",
-          "parameters": {
-            "conditions": {
-              "number": [
-                {
-                  "value1": "={{ $json.CurrentTemperature }}",
-                  "operation": "larger",
-                  "value2": 30
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Send Alert",
-          "type": "n8n-nodes-base.emailSend",
-          "parameters": {
-            "subject": "Temperature Alert!",
-            "text": "Temperature is {{ $json.CurrentTemperature }}°C - Above threshold!"
-          }
-        }
+      "parameters": {
+        "resource": "accessories",
+        "operation": "setCharacteristic",
+        "accessToken": "={{ $('Login to homebridge').item.json.access_token }}",
+        "uniqueId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Unique_ID', ``, 'string') }}",
+        "characteristicType": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Characteristic_Type', ``, 'string') }}",
+        "value": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Value', ``, 'string') }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-homebridge.homebridgeTool",
+      "typeVersion": 1,
+      "position": [
+        384,
+        224
       ],
-      "connections": {
-        "Every 5 Minutes": {
-          "main": [[{ "node": "Login" }]]
-        },
-        "Login": {
-          "main": [[{ "node": "Get Temperature Sensor" }]]
-        },
-        "Get Temperature Sensor": {
-          "main": [[{ "node": "Check Temperature" }]]
-        },
-        "Check Temperature": {
-          "main": [[{ "node": "Send Alert" }]]
+      "id": "40d01600-9727-4752-bfa7-e74708e1805c",
+      "name": "Set",
+      "credentials": {
+        "homebridgeApi": {
+          "id": "pd6jLLDmS2xKSoP6",
+          "name": "Homebridge account"
         }
       }
     },
     {
-      "name": "Plugin Management",
-      "description": "Search, check updates, and manage plugins",
-      "nodes": [
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "List Installed Plugins",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "plugins",
-            "operation": "listInstalled"
-          }
-        },
-        {
-          "name": "Search for New Plugins",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "plugins",
-            "operation": "search",
-            "query": "camera"
-          }
-        },
-        {
-          "name": "Get Plugin Info",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "plugins",
-            "operation": "lookup",
-            "pluginName": "homebridge-camera-ffmpeg"
-          }
-        },
-        {
-          "name": "Get Plugin Changelog",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "plugins",
-            "operation": "getChangelog",
-            "pluginName": "homebridge-camera-ffmpeg"
-          }
-        }
+      "parameters": {
+        "resource": "accessories",
+        "operation": "getAccessory",
+        "accessToken": "={{ $('Login to homebridge').item.json.access_token }}",
+        "uniqueId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Unique_ID', ``, 'string') }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-homebridge.homebridgeTool",
+      "typeVersion": 1,
+      "position": [
+        512,
+        224
       ],
-      "connections": {
-        "Login": {
-          "main": [
-            [
-              { "node": "List Installed Plugins" },
-              { "node": "Search for New Plugins" }
-            ]
-          ]
-        },
-        "List Installed Plugins": {
-          "main": [[{ "node": "Get Plugin Info" }]]
-        },
-        "Get Plugin Info": {
-          "main": [[{ "node": "Get Plugin Changelog" }]]
+      "id": "d90b9523-518f-493e-8d76-8d2000f724e5",
+      "name": "Get",
+      "credentials": {
+        "homebridgeApi": {
+          "id": "pd6jLLDmS2xKSoP6",
+          "name": "Homebridge account"
         }
       }
     },
     {
-      "name": "System Health Monitoring",
-      "description": "Monitor CPU, RAM, and disk usage with alerts",
-      "nodes": [
-        {
-          "name": "Every Hour",
-          "type": "n8n-nodes-base.scheduleTrigger",
-          "parameters": {
-            "rule": {
-              "interval": [
-                {
-                  "field": "hours",
-                  "hoursInterval": 1
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "Get CPU Info",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "status",
-            "operation": "getCPU"
-          }
-        },
-        {
-          "name": "Get RAM Info",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "status",
-            "operation": "getRAM"
-          }
-        },
-        {
-          "name": "Get Uptime",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "status",
-            "operation": "getUptime"
-          }
-        },
-        {
-          "name": "Merge Data",
-          "type": "n8n-nodes-base.merge",
-          "parameters": {
-            "mode": "append"
-          }
-        },
-        {
-          "name": "Check Thresholds",
-          "type": "n8n-nodes-base.code",
-          "parameters": {
-            "code": "const items = $input.all();\nconst alerts = [];\n\nfor (const item of items) {\n  if (item.json.currentLoad > 80) {\n    alerts.push({ type: 'CPU', value: item.json.currentLoad, message: 'CPU usage above 80%' });\n  }\n  if (item.json.usedPercent > 85) {\n    alerts.push({ type: 'RAM', value: item.json.usedPercent, message: 'RAM usage above 85%' });\n  }\n}\n\nreturn alerts.map(alert => ({ json: alert }));"
-          }
-        },
-        {
-          "name": "Send Alert",
-          "type": "n8n-nodes-base.emailSend",
-          "parameters": {
-            "subject": "Homebridge Health Alert",
-            "text": "{{ $json.type }}: {{ $json.message }}\nValue: {{ $json.value }}%"
-          }
-        }
+      "parameters": {
+        "resource": "status",
+        "accessToken": "={{ $('Login to homebridge').item.json.access_token }}",
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-homebridge.homebridgeTool",
+      "typeVersion": 1,
+      "position": [
+        640,
+        224
       ],
-      "connections": {
-        "Every Hour": {
-          "main": [[{ "node": "Login" }]]
-        },
-        "Login": {
-          "main": [
-            [
-              { "node": "Get CPU Info" },
-              { "node": "Get RAM Info" },
-              { "node": "Get Uptime" }
-            ]
-          ]
-        },
-        "Get CPU Info": {
-          "main": [[{ "node": "Merge Data", "type": "main", "index": 0 }]]
-        },
-        "Get RAM Info": {
-          "main": [[{ "node": "Merge Data", "type": "main", "index": 1 }]]
-        },
-        "Get Uptime": {
-          "main": [[{ "node": "Merge Data", "type": "main", "index": 2 }]]
-        },
-        "Merge Data": {
-          "main": [[{ "node": "Check Thresholds" }]]
-        },
-        "Check Thresholds": {
-          "main": [[{ "node": "Send Alert" }]]
+      "id": "0ba48e77-4b65-41da-bb80-1dc798aecb0e",
+      "name": "Server Status",
+      "credentials": {
+        "homebridgeApi": {
+          "id": "pd6jLLDmS2xKSoP6",
+          "name": "Homebridge account"
         }
       }
     },
     {
-      "name": "Automated Server Restart",
-      "description": "Restart Homebridge server when needed",
-      "nodes": [
-        {
-          "name": "Webhook Trigger",
-          "type": "n8n-nodes-base.webhook",
-          "parameters": {
-            "path": "homebridge-restart",
-            "httpMethod": "POST",
-            "responseMode": "responseNode"
-          }
-        },
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "Create Backup First",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "backup",
-            "operation": "createBackup"
-          }
-        },
-        {
-          "name": "Restart Server",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "server",
-            "operation": "restart"
-          }
-        },
-        {
-          "name": "Wait 30 Seconds",
-          "type": "n8n-nodes-base.wait",
-          "parameters": {
-            "amount": 30,
-            "unit": "seconds"
-          }
-        },
-        {
-          "name": "Check Status",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "status",
-            "operation": "getHomebridgeStatus"
-          }
-        },
-        {
-          "name": "Respond",
-          "type": "n8n-nodes-base.respondToWebhook",
-          "parameters": {
-            "respondWith": "json",
-            "responseBody": "={{ { success: true, status: $json.status, message: 'Server restarted successfully' } }}"
-          }
-        }
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        112,
+        224
       ],
-      "connections": {
-        "Webhook Trigger": {
-          "main": [[{ "node": "Login" }]]
-        },
-        "Login": {
-          "main": [[{ "node": "Create Backup First" }]]
-        },
-        "Create Backup First": {
-          "main": [[{ "node": "Restart Server" }]]
-        },
-        "Restart Server": {
-          "main": [[{ "node": "Wait 30 Seconds" }]]
-        },
-        "Wait 30 Seconds": {
-          "main": [[{ "node": "Check Status" }]]
-        },
-        "Check Status": {
-          "main": [[{ "node": "Respond" }]]
-        }
-      }
-    },
-    {
-      "name": "MCP Batch Operations",
-      "description": "Execute multiple operations in a single workflow for MCP",
-      "nodes": [
-        {
-          "name": "MCP Trigger",
-          "type": "n8n-nodes-base.manualTrigger"
-        },
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "Batch Operations",
-          "type": "n8n-nodes-base.code",
-          "parameters": {
-            "code": "// Define batch operations for MCP\nconst operations = [\n  { resource: 'status', operation: 'getHomebridgeStatus' },\n  { resource: 'accessories', operation: 'list' },\n  { resource: 'plugins', operation: 'listInstalled' },\n  { resource: 'status', operation: 'getCPU' },\n  { resource: 'status', operation: 'getRAM' }\n];\n\nreturn operations.map(op => ({ json: op }));"
-          }
-        },
-        {
-          "name": "Execute Operation",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "={{ $json.resource }}",
-            "operation": "={{ $json.operation }}"
-          }
-        },
-        {
-          "name": "Aggregate Results",
-          "type": "n8n-nodes-base.aggregate",
-          "parameters": {
-            "aggregate": "aggregateAllItemData"
-          }
-        }
-      ],
-      "connections": {
-        "MCP Trigger": {
-          "main": [[{ "node": "Login" }]]
-        },
-        "Login": {
-          "main": [[{ "node": "Batch Operations" }]]
-        },
-        "Batch Operations": {
-          "main": [[{ "node": "Execute Operation" }]]
-        },
-        "Execute Operation": {
-          "main": [[{ "node": "Aggregate Results" }]]
-        }
-      }
-    },
-    {
-      "name": "AI Voice Control - Natural Language",
-      "description": "Control smart home using natural language via AI agent",
-      "nodes": [
-        {
-          "name": "Webhook - Voice Command",
-          "type": "n8n-nodes-base.webhook",
-          "parameters": {
-            "path": "voice-control",
-            "httpMethod": "POST",
-            "responseMode": "responseNode"
-          }
-        },
-        {
-          "name": "Login to Homebridge",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "Get Accessories List",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "list"
-          }
-        },
-        {
-          "name": "AI Agent - Parse Command",
-          "type": "n8n-nodes-base.agent",
-          "parameters": {
-            "promptType": "define",
-            "text": "={{ $json.body.command }}",
-            "options": {
-              "systemMessage": "You are a smart home assistant. Parse the user's command and determine:\n1. Which device to control (match from accessories list)\n2. What action to perform (on/off, brightness, temperature)\n3. What value to set\n\nRespond in JSON format:\n{\n  \"device\": \"device name\",\n  \"uniqueId\": \"device unique id\",\n  \"action\": \"characteristic type\",\n  \"value\": \"value to set\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Execute Command",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "setCharacteristic",
-            "uniqueId": "={{ JSON.parse($json.output).uniqueId }}",
-            "characteristicType": "={{ JSON.parse($json.output).action }}",
-            "value": "={{ JSON.parse($json.output).value }}"
-          }
-        },
-        {
-          "name": "Generate Response",
-          "type": "n8n-nodes-base.agent",
-          "parameters": {
-            "promptType": "define",
-            "text": "Generate a friendly confirmation message for: {{ JSON.parse($('AI Agent - Parse Command').item.json.output).device }} is now {{ JSON.parse($('AI Agent - Parse Command').item.json.output).value }}"
-          }
-        },
-        {
-          "name": "Respond",
-          "type": "n8n-nodes-base.respondToWebhook",
-          "parameters": {
-            "respondWith": "json",
-            "responseBody": "={{ { success: true, message: $json.output, device: JSON.parse($('AI Agent - Parse Command').item.json.output).device } }}"
-          }
-        }
-      ],
-      "connections": {
-        "Webhook - Voice Command": {
-          "main": [[{ "node": "Login to Homebridge" }]]
-        },
-        "Login to Homebridge": {
-          "main": [[{ "node": "Get Accessories List" }]]
-        },
-        "Get Accessories List": {
-          "main": [[{ "node": "AI Agent - Parse Command" }]]
-        },
-        "AI Agent - Parse Command": {
-          "main": [[{ "node": "Execute Command" }]]
-        },
-        "Execute Command": {
-          "main": [[{ "node": "Generate Response" }]]
-        },
-        "Generate Response": {
-          "main": [[{ "node": "Respond" }]]
-        }
-      }
-    },
-    {
-      "name": "AI Home Automation Assistant",
-      "description": "AI assistant that can control all aspects of smart home",
-      "nodes": [
-        {
-          "name": "Chat Webhook",
-          "type": "n8n-nodes-base.webhook",
-          "parameters": {
-            "path": "home-assistant",
-            "httpMethod": "POST"
-          }
-        },
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "AI Agent with Tools",
-          "type": "n8n-nodes-base.agent",
-          "parameters": {
-            "promptType": "define",
-            "text": "={{ $json.body.message }}",
-            "hasOutputParser": true,
-            "options": {
-              "systemMessage": "You are a helpful smart home assistant with access to Homebridge API.\n\nAvailable tools:\n- list_accessories: Get all smart home devices\n- get_status: Get system status\n- control_device: Control a specific device\n- get_temperature: Get temperature from sensors\n- create_backup: Create system backup\n\nHelp users control their smart home naturally."
-            }
-          },
-          "typeVersion": 1.3
-        },
-        {
-          "name": "Tool: List Accessories",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "list"
-          }
-        },
-        {
-          "name": "Tool: Get Status",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "status",
-            "operation": "getHomebridgeStatus"
-          }
-        },
-        {
-          "name": "Tool: Control Device",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "setCharacteristic",
-            "uniqueId": "={{ $json.deviceId }}",
-            "characteristicType": "={{ $json.characteristic }}",
-            "value": "={{ $json.value }}"
-          }
-        },
-        {
-          "name": "Response",
-          "type": "n8n-nodes-base.respondToWebhook",
-          "parameters": {
-            "respondWith": "json",
-            "responseBody": "={{ { response: $json.output, executed: $json.toolCalls } }}"
-          }
-        }
-      ],
-      "connections": {
-        "Chat Webhook": {
-          "main": [[{ "node": "Login" }]]
-        },
-        "Login": {
-          "main": [[{ "node": "AI Agent with Tools" }]]
-        },
-        "AI Agent with Tools": {
-          "main": [[{ "node": "Response" }]]
-        }
-      }
-    },
-    {
-      "name": "Smart Home Scenes with AI",
-      "description": "AI creates and executes smart home scenes based on context",
-      "nodes": [
-        {
-          "name": "Trigger - Time or Event",
-          "type": "n8n-nodes-base.webhook",
-          "parameters": {
-            "path": "scene-trigger",
-            "httpMethod": "POST"
-          }
-        },
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "Get Current State",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "list"
-          }
-        },
-        {
-          "name": "Get Time and Weather",
-          "type": "n8n-nodes-base.code",
-          "parameters": {
-            "code": "const now = new Date();\nreturn [{\n  json: {\n    time: now.toISOString(),\n    hour: now.getHours(),\n    scenario: $input.item.json.body.scenario || 'auto'\n  }\n}];"
-          }
-        },
-        {
-          "name": "AI - Determine Scene",
-          "type": "n8n-nodes-base.agent",
-          "parameters": {
-            "promptType": "define",
-            "text": "Based on:\n- Time: {{ $json.time }}\n- Hour: {{ $json.hour }}\n- Scenario: {{ $json.scenario }}\n- Current devices: {{ $('Get Current State').item.json }}\n\nDetermine the optimal smart home scene and provide device settings in JSON format.",
-            "options": {
-              "systemMessage": "You are a smart home scene optimizer. Create scenes like:\n- Morning: Gradual lights, temperature adjustment\n- Evening: Warm lights, security on\n- Night: Lights off, temperature down\n- Away: Security mode, minimal power\n\nReturn JSON array of actions:\n[{ \"deviceId\": \"...\", \"characteristic\": \"On\", \"value\": \"true\" }]"
-            }
-          }
-        },
-        {
-          "name": "Parse Scene Actions",
-          "type": "n8n-nodes-base.code",
-          "parameters": {
-            "code": "const actions = JSON.parse($input.item.json.output);\nreturn actions.map(action => ({ json: action }));"
-          }
-        },
-        {
-          "name": "Execute Actions",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "setCharacteristic",
-            "uniqueId": "={{ $json.deviceId }}",
-            "characteristicType": "={{ $json.characteristic }}",
-            "value": "={{ $json.value }}"
-          }
-        },
-        {
-          "name": "Log Results",
-          "type": "n8n-nodes-base.code",
-          "parameters": {
-            "code": "return [{ json: {\n  scene: $('AI - Determine Scene').item.json.output,\n  executed: $input.all().length,\n  timestamp: new Date().toISOString()\n}}];"
-          }
-        }
-      ],
-      "connections": {
-        "Trigger - Time or Event": {
-          "main": [[{ "node": "Login" }]]
-        },
-        "Login": {
-          "main": [
-            [
-              { "node": "Get Current State" },
-              { "node": "Get Time and Weather" }
-            ]
-          ]
-        },
-        "Get Current State": {
-          "main": [[{ "node": "AI - Determine Scene" }]]
-        },
-        "Get Time and Weather": {
-          "main": [[{ "node": "AI - Determine Scene", "type": "main", "index": 1 }]]
-        },
-        "AI - Determine Scene": {
-          "main": [[{ "node": "Parse Scene Actions" }]]
-        },
-        "Parse Scene Actions": {
-          "main": [[{ "node": "Execute Actions" }]]
-        },
-        "Execute Actions": {
-          "main": [[{ "node": "Log Results" }]]
-        }
-      }
-    },
-    {
-      "name": "AI Energy Optimizer",
-      "description": "AI analyzes usage and optimizes energy consumption",
-      "nodes": [
-        {
-          "name": "Schedule - Every Hour",
-          "type": "n8n-nodes-base.scheduleTrigger",
-          "parameters": {
-            "rule": {
-              "interval": [{ "field": "hours", "hoursInterval": 1 }]
-            }
-          }
-        },
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "Get All Accessories",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "list"
-          }
-        },
-        {
-          "name": "Get System Status",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "status",
-            "operation": "getHomebridgeStatus"
-          }
-        },
-        {
-          "name": "AI - Analyze Energy Usage",
-          "type": "n8n-nodes-base.agent",
-          "parameters": {
-            "promptType": "define",
-            "text": "Analyze current device states and suggest energy optimizations:\n\nDevices: {{ $('Get All Accessories').item.json }}\nSystem: {{ $('Get System Status').item.json }}\n\nProvide recommendations in JSON format with actions to take.",
-            "options": {
-              "systemMessage": "You are an energy optimization AI. Analyze smart home devices and:\n1. Identify devices left on unnecessarily\n2. Suggest temperature optimizations\n3. Recommend scheduling changes\n4. Calculate potential savings\n\nReturn JSON:\n{\n  \"recommendations\": [...],\n  \"actions\": [{ \"device\": \"...\", \"action\": \"...\", \"reason\": \"...\" }],\n  \"estimatedSavings\": \"...\"\n}"
-            }
-          }
-        },
-        {
-          "name": "Execute Optimizations",
-          "type": "n8n-nodes-base.if",
-          "parameters": {
-            "conditions": {
-              "boolean": [
-                {
-                  "value1": "={{ JSON.parse($json.output).actions.length }}",
-                  "operation": "larger",
-                  "value2": 0
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Apply Changes",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "accessories",
-            "operation": "setCharacteristic"
-          }
-        },
-        {
-          "name": "Send Report",
-          "type": "n8n-nodes-base.emailSend",
-          "parameters": {
-            "subject": "Smart Home Energy Optimization Report",
-            "text": "Recommendations: {{ JSON.parse($('AI - Analyze Energy Usage').item.json.output).recommendations }}\n\nActions taken: {{ JSON.parse($('AI - Analyze Energy Usage').item.json.output).actions.length }}\n\nEstimated savings: {{ JSON.parse($('AI - Analyze Energy Usage').item.json.output).estimatedSavings }}"
-          }
-        }
-      ],
-      "connections": {
-        "Schedule - Every Hour": {
-          "main": [[{ "node": "Login" }]]
-        },
-        "Login": {
-          "main": [
-            [
-              { "node": "Get All Accessories" },
-              { "node": "Get System Status" }
-            ]
-          ]
-        },
-        "Get All Accessories": {
-          "main": [[{ "node": "AI - Analyze Energy Usage" }]]
-        },
-        "Get System Status": {
-          "main": [[{ "node": "AI - Analyze Energy Usage", "type": "main", "index": 1 }]]
-        },
-        "AI - Analyze Energy Usage": {
-          "main": [[{ "node": "Execute Optimizations" }]]
-        },
-        "Execute Optimizations": {
-          "main": [
-            [{ "node": "Apply Changes" }],
-            [{ "node": "Send Report" }]
-          ]
-        },
-        "Apply Changes": {
-          "main": [[{ "node": "Send Report" }]]
-        }
-      }
-    },
-    {
-      "name": "AI Anomaly Detection",
-      "description": "AI detects unusual patterns and potential issues",
-      "nodes": [
-        {
-          "name": "Monitor - Every 15 Minutes",
-          "type": "n8n-nodes-base.scheduleTrigger",
-          "parameters": {
-            "rule": {
-              "interval": [{ "field": "minutes", "minutesInterval": 15 }]
-            }
-          }
-        },
-        {
-          "name": "Login",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "auth",
-            "operation": "login"
-          }
-        },
-        {
-          "name": "Collect Metrics",
-          "type": "n8n-nodes-base.code",
-          "parameters": {
-            "code": "// Collect from multiple status endpoints in parallel\nconst promises = [\n  'getCPU',\n  'getRAM', \n  'getNetwork',\n  'getHomebridgeStatus'\n];\n\nreturn promises.map(op => ({ json: { operation: op } }));"
-          }
-        },
-        {
-          "name": "Get Metrics",
-          "type": "homebridge",
-          "parameters": {
-            "resource": "status",
-            "operation": "={{ $json.operation }}"
-          }
-        },
-        {
-          "name": "AI - Detect Anomalies",
-          "type": "n8n-nodes-base.agent",
-          "parameters": {
-            "promptType": "define",
-            "text": "Analyze these metrics for anomalies:\n{{ $input.all() }}\n\nDetect:\n- Unusual CPU/RAM spikes\n- Network issues\n- Device failures\n- Security concerns\n\nReturn JSON with findings and severity.",
-            "options": {
-              "systemMessage": "You are a system monitoring AI. Analyze metrics and detect:\n1. Performance anomalies\n2. Potential failures\n3. Security issues\n4. Unusual patterns\n\nReturn JSON:\n{\n  \"anomalies\": [{\"type\": \"...\", \"severity\": \"low|medium|high\", \"description\": \"...\"}],\n  \"recommendations\": [...]\n}"
-            }
-          }
-        },
-        {
-          "name": "Check Severity",
-          "type": "n8n-nodes-base.if",
-          "parameters": {
-            "conditions": {
-              "string": [
-                {
-                  "value1": "={{ JSON.parse($json.output).anomalies }}",
-                  "operation": "contains",
-                  "value2": "high"
-                }
-              ]
-            }
-          }
-        },
-        {
-          "name": "Alert - High Severity",
-          "type": "n8n-nodes-base.emailSend",
-          "parameters": {
-            "subject": "ALERT: Smart Home Anomaly Detected",
-            "text": "High severity anomaly detected:\n\n{{ JSON.parse($('AI - Detect Anomalies').item.json.output).anomalies }}\n\nRecommendations:\n{{ JSON.parse($('AI - Detect Anomalies').item.json.output).recommendations }}"
-          }
-        },
-        {
-          "name": "Log - Normal",
-          "type": "n8n-nodes-base.code",
-          "parameters": {
-            "code": "return [{ json: {\n  status: 'logged',\n  anomalies: JSON.parse($('AI - Detect Anomalies').item.json.output).anomalies,\n  timestamp: new Date().toISOString()\n}}];"
-          }
-        }
-      ],
-      "connections": {
-        "Monitor - Every 15 Minutes": {
-          "main": [[{ "node": "Login" }]]
-        },
-        "Login": {
-          "main": [[{ "node": "Collect Metrics" }]]
-        },
-        "Collect Metrics": {
-          "main": [[{ "node": "Get Metrics" }]]
-        },
-        "Get Metrics": {
-          "main": [[{ "node": "AI - Detect Anomalies" }]]
-        },
-        "AI - Detect Anomalies": {
-          "main": [[{ "node": "Check Severity" }]]
-        },
-        "Check Severity": {
-          "main": [
-            [{ "node": "Alert - High Severity" }],
-            [{ "node": "Log - Normal" }]
-          ]
-        }
-      }
+      "id": "f51a03bb-b2f2-46a5-8e1e-4e7097762483",
+      "name": "Simple Memory"
     }
-  ]
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Login to homebridge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login to homebridge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Server Status": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "58d427c7cf88a4a3b363b5c99dca599fd88432494f58440f612c456289dcfd0f"
+  }
 }
