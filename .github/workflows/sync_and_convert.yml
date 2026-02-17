@@ -133,37 +133,11 @@ jobs:
           fi
 
       # ------------------------------------------------------------------
-      # 7. Detect deleted files in Drive
+      # 7. Setup Python
       # ------------------------------------------------------------------
-      - name: Detect deleted files
-        run: |
-          # List remote and local files, then find local-only files to delete.
-          # This is safer than rclone sync which deletes immediately on partial failures.
-          rclone lsf "${RCLONE_REMOTE_NAME}:${DRIVE_PATH}" \
-            --recursive \
-            --drive-export-formats docx,xlsx,pptx,csv \
-            2>/dev/null | sort > /tmp/remote_files.txt || true
-
-          find "${RAW_DIR}" -type f -printf '%P\n' | sort > /tmp/local_files.txt
-
-          # Files in local but not in remote = deleted from Drive
-          comm -23 /tmp/local_files.txt /tmp/remote_files.txt > /tmp/deleted_files.txt || true
-
-          if [ -s /tmp/deleted_files.txt ]; then
-            echo "Files removed from Drive:"
-            while IFS= read -r file; do
-              if [ -n "${file}" ]; then
-                rm -f "${RAW_DIR}/${file}"
-                echo "  Removed: ${file}"
-              fi
-            done < /tmp/deleted_files.txt
-          else
-            echo "No files deleted from Drive since last sync."
-          fi
-
-      # ------------------------------------------------------------------
-      # 8. Setup Python
-      # ------------------------------------------------------------------
+      # Note: deleted files are handled by convert.py's manifest-based
+      # stale removal. Since raw_data/ starts empty each workflow run
+      # (gitignored), there are no leftover local files to detect.
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -174,7 +148,7 @@ jobs:
         run: pip install -r requirements.txt
 
       # ------------------------------------------------------------------
-      # 9. Convert files
+      # 8. Convert files
       # ------------------------------------------------------------------
       - name: Convert to Markdown
         env:
@@ -192,25 +166,22 @@ jobs:
             -v
 
       # ------------------------------------------------------------------
-      # 10. Generate index
+      # 9. Generate index
       # ------------------------------------------------------------------
       - name: Generate docs index
         run: python scripts/generate_index.py --docs-dir "${DOCS_DIR}"
 
       # ------------------------------------------------------------------
-      # 11. Cleanup secrets
+      # 10. Cleanup secrets
       # ------------------------------------------------------------------
       - name: Cleanup
         if: always()
         run: |
           rm -f /tmp/sa.json
-          rm -f /tmp/deleted_files.txt
-          rm -f /tmp/remote_files.txt
-          rm -f /tmp/local_files.txt
           rm -f ~/.config/rclone/rclone.conf
 
       # ------------------------------------------------------------------
-      # 12. Commit and push
+      # 11. Commit and push
       # ------------------------------------------------------------------
       - name: Commit and push changes
         run: |

@@ -75,7 +75,7 @@ if [[ "$SKIP_SYNC" == "false" ]]; then
         --drive-export-formats docx,xlsx,pptx,csv \
         2>/dev/null | sort > "${REMOTE_LIST}" || true
 
-    find "${RAW_DIR}" -type f -printf '%P\n' | sort > "${LOCAL_LIST}"
+    find "${RAW_DIR}" -type f -not -name '.*' -printf '%P\n' | sort > "${LOCAL_LIST}"
 
     DELETED=$(comm -23 "${LOCAL_LIST}" "${REMOTE_LIST}")
     if [[ -n "${DELETED}" ]]; then
