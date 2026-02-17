@@ -1,0 +1,165 @@
+name: Drive to GitHub Sync
+
+on:
+  schedule:
+    # Ogni giorno alle 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      force_convert:
+        description: "Force reconversion of all files (ignore cache)"
+        required: false
+        default: "false"
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  RAW_DIR: raw_data
+  DOCS_DIR: docs
+  RCLONE_REMOTE_NAME: gdrive
+  # Percorso della cartella condivisa nel Drive (es. "Shared drives/MioTeam/Docs")
+  # Configurabile tramite secret o variabile
+  DRIVE_PATH: ${{ vars.DRIVE_PATH || 'Shared drives/TeamDocs' }}
+
+jobs:
+  sync-and-convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      # ------------------------------------------------------------------
+      # 1. Checkout
+      # ------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      # ------------------------------------------------------------------
+      # 2. Install system dependencies
+      # ------------------------------------------------------------------
+      - name: Install system packages
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq pandoc poppler-utils
+
+      # ------------------------------------------------------------------
+      # 3. Install rclone
+      # ------------------------------------------------------------------
+      - name: Install rclone
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash
+
+      # ------------------------------------------------------------------
+      # 4. Configure rclone with Service Account
+      # ------------------------------------------------------------------
+      - name: Configure rclone
+        env:
+          RCLONE_SA_JSON: ${{ secrets.RCLONE_SA_JSON }}
+        run: |
+          mkdir -p ~/.config/rclone
+
+          # Scrivi la service account key in un file temporaneo
+          echo "${RCLONE_SA_JSON}" > /tmp/sa.json
+
+          cat > ~/.config/rclone/rclone.conf << CONF
+          [${RCLONE_REMOTE_NAME}]
+          type = drive
+          scope = drive.readonly
+          service_account_file = /tmp/sa.json
+          team_drive = ${{ secrets.TEAM_DRIVE_ID }}
+          CONF
+
+          echo "Rclone configured."
+
+      # ------------------------------------------------------------------
+      # 5. Sync files from Drive
+      # ------------------------------------------------------------------
+      - name: Sync from Google Drive
+        run: |
+          mkdir -p "${RAW_DIR}"
+
+          echo "Syncing from: ${RCLONE_REMOTE_NAME}:${DRIVE_PATH}"
+          rclone sync \
+            "${RCLONE_REMOTE_NAME}:${DRIVE_PATH}" \
+            "${RAW_DIR}/" \
+            --drive-acknowledge-abuse \
+            --drive-export-formats docx,xlsx,pptx,csv \
+            --transfers 8 \
+            --checkers 16 \
+            --retries 3 \
+            --low-level-retries 10 \
+            --stats-one-line \
+            --stats 5s \
+            -v
+
+          echo ""
+          echo "=== Files synced ==="
+          find "${RAW_DIR}" -type f | head -100
+          echo "Total: $(find "${RAW_DIR}" -type f | wc -l) files"
+
+      # ------------------------------------------------------------------
+      # 6. Setup Python
+      # ------------------------------------------------------------------
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      # ------------------------------------------------------------------
+      # 7. Convert files
+      # ------------------------------------------------------------------
+      - name: Convert to Markdown
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ inputs.force_convert }}" = "true" ]; then
+            FORCE_FLAG="--force"
+          fi
+
+          python scripts/convert.py \
+            --raw-dir "${RAW_DIR}" \
+            --docs-dir "${DOCS_DIR}" \
+            ${FORCE_FLAG} \
+            -v
+
+      # ------------------------------------------------------------------
+      # 8. Generate index
+      # ------------------------------------------------------------------
+      - name: Generate docs index
+        run: python scripts/generate_index.py --docs-dir "${DOCS_DIR}"
+
+      # ------------------------------------------------------------------
+      # 9. Cleanup secrets
+      # ------------------------------------------------------------------
+      - name: Cleanup
+        if: always()
+        run: rm -f /tmp/sa.json
+
+      # ------------------------------------------------------------------
+      # 10. Commit and push
+      # ------------------------------------------------------------------
+      - name: Commit and push changes
+        run: |
+          git config user.name "drive-sync-bot"
+          git config user.email "drive-sync-bot@users.noreply.github.com"
+
+          git add docs/
+          git add -u docs/
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+            FILE_COUNT=$(find docs/ -name '*.md' -not -name '.manifest.json' | wc -l)
+            git commit -m "docs: sync from Google Drive (${TIMESTAMP})
+
+            Auto-generated from shared drive.
+            Markdown files: ${FILE_COUNT}"
+            git push
+          fi

@@ -1,0 +1,5 @@
+# Drive to GitHub Sync - Python dependencies
+pandas>=2.0,<3.0
+openpyxl>=3.1         # Excel (.xlsx) support
+odfpy>=1.4            # OpenDocument (.ods) support
+tabulate>=0.9         # Markdown table rendering for pandas

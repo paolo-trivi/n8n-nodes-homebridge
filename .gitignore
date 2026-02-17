@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+venv/
+.venv/
+
+# Rclone
+rclone.conf
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Raw data (synced at runtime, not committed)
+raw_data/*
+!raw_data/.gitkeep
+
+# Temporary
+*.tmp
+*.bak
