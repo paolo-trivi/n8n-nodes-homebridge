@@ -15,12 +15,14 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: drive-sync
+  cancel-in-progress: false
+
 env:
   RAW_DIR: raw_data
   DOCS_DIR: docs
   RCLONE_REMOTE_NAME: gdrive
-  # Percorso della cartella condivisa nel Drive (es. "Shared drives/MioTeam/Docs")
-  # Configurabile tramite secret o variabile
   DRIVE_PATH: ${{ vars.DRIVE_PATH || 'Shared drives/TeamDocs' }}
 
 jobs:
@@ -38,7 +40,25 @@ jobs:
           fetch-depth: 1
 
       # ------------------------------------------------------------------
-      # 2. Install system dependencies
+      # 2. Validate configuration
+      # ------------------------------------------------------------------
+      - name: Validate secrets
+        env:
+          RCLONE_SA_JSON: ${{ secrets.RCLONE_SA_JSON }}
+          TEAM_DRIVE_ID: ${{ secrets.TEAM_DRIVE_ID }}
+        run: |
+          if [ -z "${RCLONE_SA_JSON}" ]; then
+            echo "::error::Secret RCLONE_SA_JSON is not set. Configure it in Settings > Secrets."
+            exit 1
+          fi
+          if [ -z "${TEAM_DRIVE_ID}" ]; then
+            echo "::error::Secret TEAM_DRIVE_ID is not set. Configure it in Settings > Secrets."
+            exit 1
+          fi
+          echo "Secrets validated."
+
+      # ------------------------------------------------------------------
+      # 3. Install system dependencies
       # ------------------------------------------------------------------
       - name: Install system packages
         run: |
@@ -46,14 +66,14 @@ jobs:
           sudo apt-get install -y -qq pandoc poppler-utils
 
       # ------------------------------------------------------------------
-      # 3. Install rclone
+      # 4. Install rclone
       # ------------------------------------------------------------------
       - name: Install rclone
         run: |
           curl -fsSL https://rclone.org/install.sh | sudo bash
 
       # ------------------------------------------------------------------
-      # 4. Configure rclone with Service Account
+      # 5. Configure rclone with Service Account
       # ------------------------------------------------------------------
       - name: Configure rclone
         env:
@@ -62,9 +82,14 @@ jobs:
         run: |
           mkdir -p ~/.config/rclone
 
-          # Scrivi la service account key in un file temporaneo
           echo "${RCLONE_SA_JSON}" > /tmp/sa.json
           chmod 600 /tmp/sa.json
+
+          # Validate JSON syntax
+          python3 -c "import json, sys; json.load(open('/tmp/sa.json'))" || {
+            echo "::error::RCLONE_SA_JSON is not valid JSON."
+            exit 1
+          }
 
           {
             echo "[${RCLONE_REMOTE_NAME}]"
@@ -77,14 +102,14 @@ jobs:
           echo "Rclone configured."
 
       # ------------------------------------------------------------------
-      # 5. Sync files from Drive
+      # 6. Sync files from Drive
       # ------------------------------------------------------------------
       - name: Sync from Google Drive
         run: |
           mkdir -p "${RAW_DIR}"
 
           echo "Syncing from: ${RCLONE_REMOTE_NAME}:${DRIVE_PATH}"
-          rclone sync \
+          rclone copy \
             "${RCLONE_REMOTE_NAME}:${DRIVE_PATH}" \
             "${RAW_DIR}/" \
             --drive-acknowledge-abuse \
@@ -100,10 +125,41 @@ jobs:
           echo ""
           echo "=== Files synced ==="
           find "${RAW_DIR}" -type f | head -100
-          echo "Total: $(find "${RAW_DIR}" -type f | wc -l) files"
+          FILE_COUNT=$(find "${RAW_DIR}" -type f | wc -l)
+          echo "Total: ${FILE_COUNT} files"
+
+          if [ "${FILE_COUNT}" -eq 0 ]; then
+            echo "::warning::No files synced from Drive. Check DRIVE_PATH and permissions."
+          fi
 
       # ------------------------------------------------------------------
-      # 6. Setup Python
+      # 7. Detect deleted files in Drive
+      # ------------------------------------------------------------------
+      - name: Detect deleted files
+        run: |
+          # Use rclone check to find files in raw_data that no longer exist in Drive
+          # This is safer than rclone sync which deletes immediately
+          rclone check \
+            "${RCLONE_REMOTE_NAME}:${DRIVE_PATH}" \
+            "${RAW_DIR}/" \
+            --one-way \
+            --missing-on-src /tmp/deleted_files.txt \
+            --drive-export-formats docx,xlsx,pptx,csv \
+            2>/dev/null || true
+
+          if [ -s /tmp/deleted_files.txt ]; then
+            echo "Files removed from Drive:"
+            cat /tmp/deleted_files.txt
+            while IFS= read -r file; do
+              rm -f "${RAW_DIR}/${file}"
+              echo "  Removed: ${file}"
+            done < /tmp/deleted_files.txt
+          else
+            echo "No files deleted from Drive since last sync."
+          fi
+
+      # ------------------------------------------------------------------
+      # 8. Setup Python
       # ------------------------------------------------------------------
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -115,12 +171,14 @@ jobs:
         run: pip install -r requirements.txt
 
       # ------------------------------------------------------------------
-      # 7. Convert files
+      # 9. Convert files
       # ------------------------------------------------------------------
       - name: Convert to Markdown
+        env:
+          FORCE_CONVERT: ${{ inputs.force_convert }}
         run: |
           FORCE_FLAG=""
-          if [ "${{ inputs.force_convert }}" = "true" ]; then
+          if [ "${FORCE_CONVERT}" = "true" ]; then
             FORCE_FLAG="--force"
           fi
 
@@ -131,22 +189,23 @@ jobs:
             -v
 
       # ------------------------------------------------------------------
-      # 8. Generate index
+      # 10. Generate index
       # ------------------------------------------------------------------
       - name: Generate docs index
         run: python scripts/generate_index.py --docs-dir "${DOCS_DIR}"
 
       # ------------------------------------------------------------------
-      # 9. Cleanup secrets
+      # 11. Cleanup secrets
       # ------------------------------------------------------------------
       - name: Cleanup
         if: always()
         run: |
           rm -f /tmp/sa.json
+          rm -f /tmp/deleted_files.txt
           rm -f ~/.config/rclone/rclone.conf
 
       # ------------------------------------------------------------------
-      # 10. Commit and push
+      # 12. Commit and push
       # ------------------------------------------------------------------
       - name: Commit and push changes
         run: |

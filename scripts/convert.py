@@ -117,9 +117,12 @@ def load_manifest(manifest_file: Path) -> dict:
 
 
 def save_manifest(manifest: dict, manifest_file: Path) -> None:
+    """Atomic write: write to temp file then rename to prevent corruption."""
     manifest_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(manifest_file, "w") as fh:
+    tmp_file = manifest_file.with_suffix(".json.tmp")
+    with open(tmp_file, "w") as fh:
         json.dump(manifest, fh, indent=2, sort_keys=True)
+    tmp_file.replace(manifest_file)
 
 
 def ensure_parent(path: Path) -> None:
@@ -165,6 +168,12 @@ def convert_table(src: Path, dst: Path) -> bool:
     ext = src.suffix.lower()
 
     try:
+        if src.stat().st_size == 0:
+            log.warning("Empty file, creating stub: %s", src.name)
+            with open(dst, "w", encoding="utf-8") as fh:
+                fh.write(f"# {src.stem}\n\n*Empty file*\n")
+            return True
+
         if ext == ".csv":
             df = pd.read_csv(src)
         elif ext == ".tsv":
@@ -281,9 +290,15 @@ def convert_all(ctx: ConvertContext, force: bool = False) -> dict:
     ctx.assets_dir.mkdir(parents=True, exist_ok=True)
 
     source_files: list[Path] = []
+    raw_dir_resolved = ctx.raw_dir.resolve()
     for path in sorted(ctx.raw_dir.rglob("*")):
-        if path.is_file() and not path.name.startswith("."):
-            source_files.append(path)
+        if not path.is_file() or path.name.startswith("."):
+            continue
+        # Guard against symlinks escaping the raw_dir
+        if not path.resolve().is_relative_to(raw_dir_resolved):
+            log.warning("Skipping symlink outside raw_dir: %s", path)
+            continue
+        source_files.append(path)
 
     log.info("Found %d files in %s", len(source_files), ctx.raw_dir)
 
@@ -381,6 +396,10 @@ def main() -> None:
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+
+    if not shutil.which("pandoc"):
+        log.error("pandoc is not installed. Install it: https://pandoc.org/installing.html")
+        sys.exit(1)
 
     ctx = ConvertContext(
         raw_dir=Path(args.raw_dir),

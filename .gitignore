@@ -25,4 +25,5 @@ raw_data/*
 
 # Temporary
 *.tmp
+*.json.tmp
 *.bak
