@@ -8,6 +8,12 @@ venv/
 
 # Rclone
 rclone.conf
+*.json.bak
+
+# Service account keys (NEVER commit)
+sa.json
+*-sa-key.json
+*service-account*.json
 
 # OS
 .DS_Store

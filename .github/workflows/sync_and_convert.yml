@@ -58,19 +58,21 @@ jobs:
       - name: Configure rclone
         env:
           RCLONE_SA_JSON: ${{ secrets.RCLONE_SA_JSON }}
+          TEAM_DRIVE_ID: ${{ secrets.TEAM_DRIVE_ID }}
         run: |
           mkdir -p ~/.config/rclone
 
           # Scrivi la service account key in un file temporaneo
           echo "${RCLONE_SA_JSON}" > /tmp/sa.json
+          chmod 600 /tmp/sa.json
 
-          cat > ~/.config/rclone/rclone.conf << CONF
-          [${RCLONE_REMOTE_NAME}]
-          type = drive
-          scope = drive.readonly
-          service_account_file = /tmp/sa.json
-          team_drive = ${{ secrets.TEAM_DRIVE_ID }}
-          CONF
+          {
+            echo "[${RCLONE_REMOTE_NAME}]"
+            echo "type = drive"
+            echo "scope = drive.readonly"
+            echo "service_account_file = /tmp/sa.json"
+            echo "team_drive = ${TEAM_DRIVE_ID}"
+          } > ~/.config/rclone/rclone.conf
 
           echo "Rclone configured."
 
@@ -139,7 +141,9 @@ jobs:
       # ------------------------------------------------------------------
       - name: Cleanup
         if: always()
-        run: rm -f /tmp/sa.json
+        run: |
+          rm -f /tmp/sa.json
+          rm -f ~/.config/rclone/rclone.conf
 
       # ------------------------------------------------------------------
       # 10. Commit and push
@@ -150,16 +154,13 @@ jobs:
           git config user.email "drive-sync-bot@users.noreply.github.com"
 
           git add docs/
-          git add -u docs/
 
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
             TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
-            FILE_COUNT=$(find docs/ -name '*.md' -not -name '.manifest.json' | wc -l)
-            git commit -m "docs: sync from Google Drive (${TIMESTAMP})
-
-            Auto-generated from shared drive.
-            Markdown files: ${FILE_COUNT}"
+            FILE_COUNT=$(find docs/ -name '*.md' -not -name 'INDEX.md' | wc -l)
+            git commit -m "docs: sync from Google Drive (${TIMESTAMP})" \
+              -m "Auto-generated from shared drive. Markdown files: ${FILE_COUNT}"
             git push
           fi

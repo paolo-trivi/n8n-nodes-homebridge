@@ -55,8 +55,8 @@ def render_tree(tree: dict, docs_dir: Path, prefix: str = "", depth: int = 0) ->
         lines.append(f"{indent}- **{d}/**")
         lines.extend(render_tree(tree[d], docs_dir, prefix=f"{prefix}{d}/", depth=depth + 1))
 
-    for f in files:
-        path: Path = tree[f]
+    for filename in files:
+        path: Path = tree[filename]
         rel = path.relative_to(docs_dir)
         name = path.stem.replace("_", " ").replace("-", " ").title()
         lines.append(f"{indent}- [{name}]({rel})")
@@ -83,7 +83,8 @@ def generate_index(docs_dir: Path) -> None:
 
     index_path = docs_dir / "INDEX.md"
     index_path.write_text("\n".join(lines), encoding="utf-8")
-    log.info("Generated %s with %d entries", index_path, sum(1 for l in lines if l.strip().startswith("- [")))
+    entry_count = sum(1 for line in lines if line.strip().startswith("- ["))
+    log.info("Generated %s with %d entries", index_path, entry_count)
 
 
 def main() -> None:

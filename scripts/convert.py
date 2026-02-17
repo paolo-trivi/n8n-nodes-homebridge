@@ -31,16 +31,12 @@ import os
 import shutil
 import subprocess
 import sys
+from dataclasses import dataclass, field
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-RAW_DIR = Path("raw_data")
-DOCS_DIR = Path("docs")
-ASSETS_DIR = DOCS_DIR / "assets"
-MANIFEST_FILE = DOCS_DIR / ".manifest.json"
-
 PANDOC_TYPES = {
     ".docx": "markdown",
     ".pptx": "markdown",
@@ -70,41 +66,60 @@ logging.basicConfig(
 log = logging.getLogger("convert")
 
 
+@dataclass
+class ConvertContext:
+    """Holds directory paths for the current conversion run."""
+    raw_dir: Path
+    docs_dir: Path
+    assets_dir: Path = field(init=False)
+    manifest_file: Path = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.assets_dir = self.docs_dir / "assets"
+        self.manifest_file = self.docs_dir / ".manifest.json"
+
+    def relative_output(self, src: Path) -> Path:
+        """Map raw_data/sub/dir/file.docx -> docs/sub/dir/file.md"""
+        rel = src.relative_to(self.raw_dir)
+        return self.docs_dir / rel.with_suffix(".md")
+
+    def relative_asset_output(self, src: Path) -> Path:
+        """Map raw_data/sub/dir/img.png -> docs/assets/sub/dir/img.png"""
+        rel = src.relative_to(self.raw_dir)
+        return self.assets_dir / rel
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 def file_hash(path: Path) -> str:
     """SHA-256 hash of a file (used for incremental builds)."""
     h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(8192), b""):
             h.update(chunk)
     return h.hexdigest()
 
 
-def load_manifest() -> dict:
-    if MANIFEST_FILE.exists():
-        with open(MANIFEST_FILE) as f:
-            return json.load(f)
-    return {}
+def load_manifest(manifest_file: Path) -> dict:
+    if not manifest_file.exists():
+        return {}
+    try:
+        with open(manifest_file) as fh:
+            data = json.load(fh)
+            if not isinstance(data, dict):
+                log.warning("Manifest is not a dict, resetting.")
+                return {}
+            return data
+    except (json.JSONDecodeError, OSError) as exc:
+        log.warning("Corrupt manifest, resetting: %s", exc)
+        return {}
 
 
-def save_manifest(manifest: dict) -> None:
-    MANIFEST_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(MANIFEST_FILE, "w") as f:
-        json.dump(manifest, f, indent=2, sort_keys=True)
-
-
-def relative_output(src: Path) -> Path:
-    """Map raw_data/sub/dir/file.docx -> docs/sub/dir/file.md"""
-    rel = src.relative_to(RAW_DIR)
-    return DOCS_DIR / rel.with_suffix(".md")
-
-
-def relative_asset_output(src: Path) -> Path:
-    """Map raw_data/sub/dir/img.png -> docs/assets/sub/dir/img.png"""
-    rel = src.relative_to(RAW_DIR)
-    return ASSETS_DIR / rel
+def save_manifest(manifest: dict, manifest_file: Path) -> None:
+    manifest_file.parent.mkdir(parents=True, exist_ok=True)
+    with open(manifest_file, "w") as fh:
+        json.dump(manifest, fh, indent=2, sort_keys=True)
 
 
 def ensure_parent(path: Path) -> None:
@@ -122,11 +137,10 @@ def run_cmd(cmd: list[str], desc: str) -> subprocess.CompletedProcess:
 # ---------------------------------------------------------------------------
 # Converters
 # ---------------------------------------------------------------------------
-def convert_pandoc(src: Path, dst: Path, to_format: str) -> bool:
+def convert_pandoc(src: Path, dst: Path, to_format: str, ctx: ConvertContext) -> bool:
     """Convert via Pandoc."""
     ensure_parent(dst)
-    # Extract media (images) to the assets dir alongside the output
-    media_dir = ASSETS_DIR / src.relative_to(RAW_DIR).parent / (src.stem + "_media")
+    media_dir = ctx.assets_dir / src.relative_to(ctx.raw_dir).parent / (src.stem + "_media")
     cmd = [
         "pandoc", str(src),
         "-t", to_format,
@@ -136,7 +150,6 @@ def convert_pandoc(src: Path, dst: Path, to_format: str) -> bool:
     ]
     result = run_cmd(cmd, f"Pandoc {src.name}")
     if result.returncode != 0:
-        # Retry without media extraction
         cmd_simple = [
             "pandoc", str(src), "-t", to_format, "-o", str(dst), "--wrap=none"
         ]
@@ -157,27 +170,26 @@ def convert_table(src: Path, dst: Path) -> bool:
         elif ext == ".tsv":
             df = pd.read_csv(src, sep="\t")
         elif ext in (".xlsx", ".ods"):
-            # Read all sheets
             sheets = pd.read_excel(src, sheet_name=None, engine=None)
             parts = []
             for sheet_name, sheet_df in sheets.items():
                 parts.append(f"## {sheet_name}\n\n{sheet_df.to_markdown(index=False)}")
-            with open(dst, "w", encoding="utf-8") as f:
-                f.write(f"# {src.stem}\n\n" + "\n\n---\n\n".join(parts) + "\n")
+            with open(dst, "w", encoding="utf-8") as fh:
+                fh.write(f"# {src.stem}\n\n" + "\n\n---\n\n".join(parts) + "\n")
             return True
         else:
             return False
 
-        with open(dst, "w", encoding="utf-8") as f:
-            f.write(f"# {src.stem}\n\n{df.to_markdown(index=False)}\n")
+        with open(dst, "w", encoding="utf-8") as fh:
+            fh.write(f"# {src.stem}\n\n{df.to_markdown(index=False)}\n")
         return True
 
-    except Exception as e:
-        log.error("Table conversion failed for %s: %s", src.name, e)
+    except Exception as exc:
+        log.error("Table conversion failed for %s: %s", src.name, exc)
         return False
 
 
-def convert_pdf(src: Path, dst: Path) -> bool:
+def convert_pdf(src: Path, dst: Path, ctx: ConvertContext) -> bool:
     """Convert PDF: try marker-pdf first, then Pandoc plain text fallback."""
     ensure_parent(dst)
 
@@ -185,24 +197,23 @@ def convert_pdf(src: Path, dst: Path) -> bool:
     if shutil.which("marker_single"):
         tmp_out = dst.parent / f".{src.stem}_marker_tmp"
         tmp_out.mkdir(parents=True, exist_ok=True)
-        result = run_cmd(
-            ["marker_single", str(src), str(tmp_out)],
-            f"marker {src.name}",
-        )
-        if result.returncode == 0:
-            # marker outputs to a subdir; find the .md file
-            md_files = list(tmp_out.rglob("*.md"))
-            if md_files:
-                shutil.move(str(md_files[0]), str(dst))
-                # Move any images produced by marker
-                for img in tmp_out.rglob("*"):
-                    if img.suffix.lower() in IMAGE_TYPES and img.is_file():
-                        img_dst = ASSETS_DIR / src.relative_to(RAW_DIR).parent / img.name
-                        img_dst.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.move(str(img), str(img_dst))
-                shutil.rmtree(tmp_out, ignore_errors=True)
-                return True
-        shutil.rmtree(tmp_out, ignore_errors=True)
+        try:
+            result = run_cmd(
+                ["marker_single", str(src), str(tmp_out)],
+                f"marker {src.name}",
+            )
+            if result.returncode == 0:
+                md_files = list(tmp_out.rglob("*.md"))
+                if md_files:
+                    shutil.move(str(md_files[0]), str(dst))
+                    for img in tmp_out.rglob("*"):
+                        if img.suffix.lower() in IMAGE_TYPES and img.is_file():
+                            img_dst = ctx.assets_dir / src.relative_to(ctx.raw_dir).parent / img.name
+                            img_dst.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.move(str(img), str(img_dst))
+                    return True
+        finally:
+            shutil.rmtree(tmp_out, ignore_errors=True)
 
     # Strategy 2: Pandoc plain text extraction
     result = run_cmd(
@@ -221,8 +232,8 @@ def convert_pdf(src: Path, dst: Path) -> bool:
         )
         if result.returncode == 0 and txt_path.exists():
             content = txt_path.read_text(encoding="utf-8", errors="replace")
-            with open(dst, "w", encoding="utf-8") as f:
-                f.write(f"# {src.stem}\n\n```\n{content}\n```\n")
+            with open(dst, "w", encoding="utf-8") as fh:
+                fh.write(f"# {src.stem}\n\n```\n{content}\n```\n")
             txt_path.unlink(missing_ok=True)
             return True
 
@@ -243,48 +254,47 @@ def copy_image(src: Path, dst_asset: Path, dst_md: Path) -> bool:
     ensure_parent(dst_md)
     shutil.copy2(src, dst_asset)
 
-    # Relative path from the md file to the asset
     try:
         rel = os.path.relpath(dst_asset, dst_md.parent)
     except ValueError:
         rel = str(dst_asset)
 
-    with open(dst_md, "w", encoding="utf-8") as f:
-        f.write(f"# {src.stem}\n\n![{src.name}]({rel})\n")
+    with open(dst_md, "w", encoding="utf-8") as fh:
+        fh.write(f"# {src.stem}\n\n![{src.name}]({rel})\n")
     return True
 
 
 # ---------------------------------------------------------------------------
 # Main conversion loop
 # ---------------------------------------------------------------------------
-def convert_all(force: bool = False) -> dict:
+def convert_all(ctx: ConvertContext, force: bool = False) -> dict:
     """Walk raw_data/ and convert everything. Returns stats dict."""
-    manifest = load_manifest() if not force else {}
+    manifest = load_manifest(ctx.manifest_file) if not force else {}
     new_manifest: dict[str, str] = {}
     stats = {"converted": 0, "skipped": 0, "failed": 0, "unchanged": 0, "removed": 0}
 
-    if not RAW_DIR.exists():
-        log.warning("Source directory '%s' does not exist. Nothing to convert.", RAW_DIR)
+    if not ctx.raw_dir.exists():
+        log.warning("Source directory '%s' does not exist. Nothing to convert.", ctx.raw_dir)
         return stats
 
-    DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+    ctx.docs_dir.mkdir(parents=True, exist_ok=True)
+    ctx.assets_dir.mkdir(parents=True, exist_ok=True)
 
     source_files: list[Path] = []
-    for path in sorted(RAW_DIR.rglob("*")):
+    for path in sorted(ctx.raw_dir.rglob("*")):
         if path.is_file() and not path.name.startswith("."):
             source_files.append(path)
 
-    log.info("Found %d files in %s", len(source_files), RAW_DIR)
+    log.info("Found %d files in %s", len(source_files), ctx.raw_dir)
 
     for src in source_files:
         ext = src.suffix.lower()
-        src_key = str(src.relative_to(RAW_DIR))
+        src_key = str(src.relative_to(ctx.raw_dir))
 
         # Check if file changed (incremental build)
         current_hash = file_hash(src)
         if not force and manifest.get(src_key) == current_hash:
-            dst = relative_output(src)
+            dst = ctx.relative_output(src)
             if dst.exists():
                 new_manifest[src_key] = current_hash
                 stats["unchanged"] += 1
@@ -294,24 +304,24 @@ def convert_all(force: bool = False) -> dict:
         ok = False
 
         if ext in PANDOC_TYPES:
-            dst = relative_output(src)
-            ok = convert_pandoc(src, dst, PANDOC_TYPES[ext])
+            dst = ctx.relative_output(src)
+            ok = convert_pandoc(src, dst, PANDOC_TYPES[ext], ctx)
 
         elif ext in TABLE_TYPES:
-            dst = relative_output(src)
+            dst = ctx.relative_output(src)
             ok = convert_table(src, dst)
 
         elif ext == PDF_TYPE:
-            dst = relative_output(src)
-            ok = convert_pdf(src, dst)
+            dst = ctx.relative_output(src)
+            ok = convert_pdf(src, dst, ctx)
 
         elif ext in COPY_TYPES:
-            dst = relative_output(src)
+            dst = ctx.relative_output(src)
             ok = copy_direct(src, dst)
 
         elif ext in IMAGE_TYPES:
-            dst_asset = relative_asset_output(src)
-            dst_md = relative_output(src)
+            dst_asset = ctx.relative_asset_output(src)
+            dst_md = ctx.relative_output(src)
             ok = copy_image(src, dst_asset, dst_md)
 
         else:
@@ -330,14 +340,14 @@ def convert_all(force: bool = False) -> dict:
     # Cleanup: remove docs for files no longer in raw_data
     old_keys = set(manifest.keys()) - set(new_manifest.keys())
     for old_key in old_keys:
-        old_src = RAW_DIR / old_key
-        old_dst = relative_output(old_src)
+        old_src = ctx.raw_dir / old_key
+        old_dst = ctx.relative_output(old_src)
         if old_dst.exists():
             old_dst.unlink()
             log.info("Removed stale: %s", old_dst)
             stats["removed"] += 1
 
-    save_manifest(new_manifest)
+    save_manifest(new_manifest, ctx.manifest_file)
 
     log.info(
         "Done: %d converted, %d unchanged, %d skipped, %d failed, %d removed",
@@ -372,13 +382,12 @@ def main() -> None:
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    global RAW_DIR, DOCS_DIR, ASSETS_DIR, MANIFEST_FILE
-    RAW_DIR = Path(args.raw_dir)
-    DOCS_DIR = Path(args.docs_dir)
-    ASSETS_DIR = DOCS_DIR / "assets"
-    MANIFEST_FILE = DOCS_DIR / ".manifest.json"
+    ctx = ConvertContext(
+        raw_dir=Path(args.raw_dir),
+        docs_dir=Path(args.docs_dir),
+    )
 
-    stats = convert_all(force=args.force)
+    stats = convert_all(ctx, force=args.force)
 
     if stats["failed"] > 0:
         log.warning("Some files failed to convert. Check logs above.")
