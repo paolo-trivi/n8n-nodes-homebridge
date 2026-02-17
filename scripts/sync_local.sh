@@ -30,11 +30,21 @@ done
 echo "=== Drive to GitHub Sync (local) ==="
 echo ""
 
-# 1. Sync
+# 1. Sync (copy, not sync - safer against partial failures)
 if [[ "$SKIP_SYNC" == "false" ]]; then
-    echo "[1/3] Syncing from ${REMOTE_NAME}:${DRIVE_PATH} ..."
+    # Check prerequisites
+    if ! command -v rclone &> /dev/null; then
+        echo "ERROR: rclone is not installed. Run: ./scripts/setup_rclone.sh"
+        exit 1
+    fi
+    if ! command -v pandoc &> /dev/null; then
+        echo "ERROR: pandoc is not installed."
+        exit 1
+    fi
+
+    echo "[1/4] Copying from ${REMOTE_NAME}:${DRIVE_PATH} ..."
     mkdir -p "${RAW_DIR}"
-    rclone sync \
+    rclone copy \
         "${REMOTE_NAME}:${DRIVE_PATH}" \
         "${RAW_DIR}/" \
         --drive-acknowledge-abuse \
@@ -45,15 +55,49 @@ if [[ "$SKIP_SYNC" == "false" ]]; then
         --stats-one-line \
         --stats 5s \
         -v
-    echo "Sync completed: $(find "${RAW_DIR}" -type f | wc -l) files."
+
+    FILE_COUNT=$(find "${RAW_DIR}" -type f | wc -l)
+    echo "Copy completed: ${FILE_COUNT} files."
+
+    if [[ "${FILE_COUNT}" -eq 0 ]]; then
+        echo "WARNING: No files found. Check DRIVE_PATH and rclone config."
+    fi
+
+    echo ""
+    echo "[2/4] Detecting deleted files..."
+    # Compare remote vs local to find files deleted from Drive
+    REMOTE_LIST=$(mktemp)
+    LOCAL_LIST=$(mktemp)
+    trap 'rm -f "${REMOTE_LIST}" "${LOCAL_LIST}"' EXIT
+
+    rclone lsf "${REMOTE_NAME}:${DRIVE_PATH}" \
+        --recursive \
+        --drive-export-formats docx,xlsx,pptx,csv \
+        2>/dev/null | sort > "${REMOTE_LIST}" || true
+
+    find "${RAW_DIR}" -type f -printf '%P\n' | sort > "${LOCAL_LIST}"
+
+    DELETED=$(comm -23 "${LOCAL_LIST}" "${REMOTE_LIST}")
+    if [[ -n "${DELETED}" ]]; then
+        echo "Files removed from Drive:"
+        while IFS= read -r file; do
+            if [[ -n "${file}" ]]; then
+                rm -f "${RAW_DIR}/${file}"
+                echo "  Removed: ${file}"
+            fi
+        done <<< "${DELETED}"
+    else
+        echo "No files deleted from Drive."
+    fi
 else
-    echo "[1/3] Sync skipped (--skip-sync)."
+    echo "[1/4] Sync skipped (--skip-sync)."
+    echo "[2/4] Delete detection skipped (--skip-sync)."
 fi
 
 echo ""
 
-# 2. Convert
-echo "[2/3] Converting files..."
+# 3. Convert
+echo "[3/4] Converting files..."
 python3 scripts/convert.py \
     --raw-dir "${RAW_DIR}" \
     --docs-dir "${DOCS_DIR}" \
@@ -62,13 +106,13 @@ python3 scripts/convert.py \
 
 echo ""
 
-# 3. Index
-echo "[3/3] Generating index..."
+# 4. Index
+echo "[4/4] Generating index..."
 python3 scripts/generate_index.py --docs-dir "${DOCS_DIR}"
 
 echo ""
 echo "=== Done! ==="
 echo "Markdown files in ${DOCS_DIR}/:"
-find "${DOCS_DIR}" -name '*.md' -not -name '.manifest.json' | sort
+find "${DOCS_DIR}" -name '*.md' -not -name 'INDEX.md' | sort
 echo ""
-echo "Total: $(find "${DOCS_DIR}" -name '*.md' -not -name '.manifest.json' | wc -l) files"
+echo "Total: $(find "${DOCS_DIR}" -name '*.md' -not -name 'INDEX.md' | wc -l) files"

@@ -137,22 +137,25 @@ jobs:
       # ------------------------------------------------------------------
       - name: Detect deleted files
         run: |
-          # Use rclone check to find files in raw_data that no longer exist in Drive
-          # This is safer than rclone sync which deletes immediately
-          rclone check \
-            "${RCLONE_REMOTE_NAME}:${DRIVE_PATH}" \
-            "${RAW_DIR}/" \
-            --one-way \
-            --missing-on-src /tmp/deleted_files.txt \
+          # List remote and local files, then find local-only files to delete.
+          # This is safer than rclone sync which deletes immediately on partial failures.
+          rclone lsf "${RCLONE_REMOTE_NAME}:${DRIVE_PATH}" \
+            --recursive \
             --drive-export-formats docx,xlsx,pptx,csv \
-            2>/dev/null || true
+            2>/dev/null | sort > /tmp/remote_files.txt || true
+
+          find "${RAW_DIR}" -type f -printf '%P\n' | sort > /tmp/local_files.txt
+
+          # Files in local but not in remote = deleted from Drive
+          comm -23 /tmp/local_files.txt /tmp/remote_files.txt > /tmp/deleted_files.txt || true
 
           if [ -s /tmp/deleted_files.txt ]; then
             echo "Files removed from Drive:"
-            cat /tmp/deleted_files.txt
             while IFS= read -r file; do
-              rm -f "${RAW_DIR}/${file}"
-              echo "  Removed: ${file}"
+              if [ -n "${file}" ]; then
+                rm -f "${RAW_DIR}/${file}"
+                echo "  Removed: ${file}"
+              fi
             done < /tmp/deleted_files.txt
           else
             echo "No files deleted from Drive since last sync."
@@ -202,6 +205,8 @@ jobs:
         run: |
           rm -f /tmp/sa.json
           rm -f /tmp/deleted_files.txt
+          rm -f /tmp/remote_files.txt
+          rm -f /tmp/local_files.txt
           rm -f ~/.config/rclone/rclone.conf
 
       # ------------------------------------------------------------------
